@@ -1,0 +1,42 @@
+use POSIX qw(strftime);
+use strict;
+use warnings;
+
+my $DateRange = $ENV{'LOGWATCH_DATE_RANGE'} || 'all';
+
+# Get today's and yesterday's date in the same format as the log timestamps
+my $today = strftime('%y%m%d', localtime);
+my $yesterday = strftime('%y%m%d', localtime(time - 24 * 60 * 60));
+
+my $InBlock = 0;
+my @BlockLines;
+my $CurrentBlockDate = "";
+
+while (defined(my $ThisLine = <STDIN>)) {
+    chomp($ThisLine);
+    
+    # Detect start of a block
+    if ($ThisLine =~ /^# Time: (\d{6}) \d{2}:\d{2}:\d{2}/) {
+        $CurrentBlockDate = $1;
+        $InBlock = 1;
+        @BlockLines = ();  # Reset block storage
+    }
+    
+    if ($InBlock) {
+        push @BlockLines, $ThisLine;
+        
+        # If we have collected 7 lines, process the block
+        if (scalar @BlockLines == 7) {
+            # Apply date filtering
+            if ($DateRange eq 'all' || 
+                ($DateRange eq 'today' && $CurrentBlockDate eq $today) ||
+                ($DateRange eq 'yesterday' && $CurrentBlockDate eq $yesterday)) {
+                print join("\n", @BlockLines) . "\n";
+            }
+            
+            $InBlock = 0;  # Reset flag
+        }
+    }
+}
+
+exit(0);

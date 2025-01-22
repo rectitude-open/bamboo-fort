@@ -1,0 +1,66 @@
+use POSIX qw(strftime);
+use strict;
+use warnings;
+
+my $Detail = $ENV{'LOGWATCH_DETAIL_LEVEL'} || 0;
+my $DateRange = $ENV{'LOGWATCH_DATE_RANGE'} || 'all';
+
+my $AccessDeniedCount = 0;
+my %BlockedIPs;
+my $RequestBlock = "";
+my $InBlock = 0;
+
+# Get today's and yesterday's date in the log format
+my $today = strftime('%d/%b/%Y', localtime);
+my $yesterday = strftime('%d/%b/%Y', localtime(time - 24 * 60 * 60));
+
+while (defined(my $ThisLine = <STDIN>)) {
+    chomp($ThisLine);
+
+    # Detect start and end of a request block
+    if ($ThisLine =~ /^---.*---A--$/) {
+        $InBlock = 1;
+        $RequestBlock = "";  # Reset request block
+    } elsif ($ThisLine =~ /^---.*---Z--$/) {
+        $InBlock = 0;
+        
+        # Process the complete block
+        if ($RequestBlock =~ /ModSecurity: Access denied/) {
+            # Extract the timestamp from the request block
+            if ($RequestBlock =~ /^\[(\d{2}\/\w{3}\/\d{4}):\d{2}:\d{2}:\d{2} \+\d{4}\]/m) {
+                my $LogDate = $1;
+                
+                # Apply date filtering
+                if ($DateRange eq 'today' && $LogDate ne $today) {
+                    next;
+                } elsif ($DateRange eq 'yesterday' && $LogDate ne $yesterday) {
+                    next;
+                }
+            }
+
+            $AccessDeniedCount++;
+
+            if ($RequestBlock =~ /^\[.*\]\s+\S+\s+(\S+)\s+/m) {
+                my $BlockedIP = $1;
+                $BlockedIPs{$BlockedIP}++;
+            }
+        }
+    } elsif ($InBlock) {
+        $RequestBlock .= "$ThisLine\n";
+    }
+}
+
+# Output the statistics
+if ($AccessDeniedCount > 0) {
+    print "\nStatistics:\n";
+    print "   ModSecurity: Access denied: $AccessDeniedCount Time(s)\n";
+
+    if (keys %BlockedIPs) {
+        print "\nBlocked IPs:\n";
+        foreach my $ip (keys %BlockedIPs) {
+            print "   $ip: $BlockedIPs{$ip} Time(s)\n";
+        }
+    }
+}
+
+exit(0);

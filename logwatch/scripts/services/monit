@@ -1,0 +1,30 @@
+use POSIX qw(strftime);
+use strict;
+use warnings;
+
+my $DateRange = $ENV{'LOGWATCH_DATE_RANGE'} || 'all';
+
+# Get today's and yesterday's date in the same format as the log timestamps
+my $today = strftime('%Y-%m-%d', localtime);
+my $yesterday = strftime('%Y-%m-%d', localtime(time - 24 * 60 * 60));
+
+while (defined(my $ThisLine = <STDIN>)) {
+    chomp($ThisLine);
+
+    # Extract date from log line
+    if ($ThisLine =~ /^\[(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}[+-]\d{4}\]/) {
+        my $LogDate = $1;
+
+        # Apply date filtering
+        if ($DateRange eq 'today' && $LogDate ne $today) {
+            next;
+        } elsif ($DateRange eq 'yesterday' && $LogDate ne $yesterday) {
+            next;
+        }
+    }
+    
+    # Print matching lines
+    print "$ThisLine\n";
+}
+
+exit(0);

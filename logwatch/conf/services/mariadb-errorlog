@@ -1,0 +1,13 @@
+use strict;
+use warnings;
+
+while (my $ThisLine = <STDIN>) {
+    chomp($ThisLine);
+    
+    # Match lines containing [ERROR]
+    if ($ThisLine =~ /\[ERROR\]/) {
+        print "$ThisLine\n";
+    }
+}
+
+exit(0);

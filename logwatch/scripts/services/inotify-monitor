@@ -1,0 +1,32 @@
+my $Detail = $ENV{'LOGWATCH_DETAIL_LEVEL'} || 0;
+
+my $TotalRecords = 0;
+my @RecordList;
+
+while (defined(my $ThisLine = <STDIN>)) {
+    chomp($ThisLine);
+
+    # Match the log format and extract the data
+    if ($ThisLine =~ /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \[(\w+)\] (.+)$/) {
+        my $Timestamp = $1;
+        my $Action = $2;
+        my $Path = $3;
+
+        $TotalRecords++;
+        push @RecordList, "$Timestamp [$Action] - $Path";
+    }
+}
+
+# Output the total record count
+print "\nInotify Monitor Statistics:\n";
+print "   Total Records: $TotalRecords\n";
+
+# Output the list of records
+if (@RecordList) {
+    print "\nRecorded Entries:\n";
+    foreach my $record (@RecordList) {
+        print "   $record\n";
+    }
+}
+
+exit(0);

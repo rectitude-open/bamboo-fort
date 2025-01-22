@@ -1,0 +1,10 @@
+while (defined(my $ThisLine = <STDIN>)) {
+    chomp($ThisLine);
+
+    # Match lines with {hit}, {quar}, or {clean}
+    if ($ThisLine =~ /\{(hit|quar|clean)\}/) {
+        print "$ThisLine\n";
+    }
+}
+
+exit(0);
