@@ -28,3 +28,31 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+.type-tabs {
+  display: flex;
+  justify-content: center;
+  margin-block-end: 16px;
+  border-bottom: 2px solid var(--ifm-tabs-color-active);
+}
+
+.type-tabs .tabs__item {
+  flex: 1;
+  line-height: 16px;
+  padding: 10px 0;
+  margin-right: 0;
+  justify-content: center;
+}
+
+.type-tabs .tabs__item--active {
+  color: #fff;
+  border-radius: 0;
+  background-color: var(--ifm-tabs-color-active);
+  border: 0;
+}
+
+.ansible-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
