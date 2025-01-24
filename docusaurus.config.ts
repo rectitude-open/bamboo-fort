@@ -80,12 +80,12 @@ const config: Config = {
     },
     footer: {
       style: 'dark',
-      copyright: `Built with 🦖 Docusaurus.`,
+      copyright: `Built with 🦖 <a href="https://docusaurus.io/" target="_blank">Docusaurus</a>.`,
     },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['bash', 'vim'],
+      additionalLanguages: ['bash', 'vim', 'ini'],
     },
   } satisfies Preset.ThemeConfig,
 };
