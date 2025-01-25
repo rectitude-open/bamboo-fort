@@ -1,0 +1,116 @@
+- name: Install ModSecurity and OWASP Core Rule Set
+  hosts: all
+  remote_user: root
+
+  tasks:
+    - name: Install Remi GPG key
+      rpm_key:
+        state: present
+        key: https://rpms.remirepo.net/RPM-GPG-KEY-remi
+
+    - name: Install Remi repository
+      dnf:
+        name: https://rpms.remirepo.net/enterprise/remi-release-9.rpm
+        state: present
+        disable_gpg_check: true
+
+    - name: Install required packages
+      dnf:
+        name:
+          - git
+          - gcc-c++
+          - automake
+          - flex
+          - bison
+          - yajl
+          - yajl-devel
+          - curl
+          - curl-devel
+          - GeoIP
+          - GeoIP-devel
+          - zlib-devel
+          - pcre-devel
+          - ssdeep
+          - ssdeep-devel
+          - autoconf
+          - automake
+          - libtool
+        state: present
+
+    - name: Clone ModSecurity repository
+      git:
+        repo: https://github.com/SpiderLabs/ModSecurity
+        dest: /usr/local/ModSecurity
+        version: latest
+        force: true
+
+    - name: Build ModSecurity (/tmp/modsecurity_build_output.log)
+      shell: |
+        set -o pipefail
+        cd /usr/local/ModSecurity
+        ./build.sh
+        git submodule init
+        git submodule update
+        ./configure
+        make | tee /tmp/modsecurity_build_output.log
+        make install
+      register: modsecurity_build
+      changed_when: modsecurity_build.rc != 0
+
+    - name: Clone ModSecurity-nginx repository
+      git:
+        repo: https://github.com/owasp-modsecurity/ModSecurity-nginx
+        dest: /usr/local/ModSecurity-nginx
+        version: latest
+        force: true
+
+    - name: Clone OWASP ModSecurity Core Rule Set
+      git:
+        repo: https://github.com/coreruleset/coreruleset
+        dest: /usr/local/modsecurity-crs
+        version: latest
+        force: true
+
+    - name: Move example CRS setup files
+      shell: |
+        mv /usr/local/modsecurity-crs/crs-setup.conf.example \
+           /usr/local/modsecurity-crs/crs-setup.conf && \
+        mv /usr/local/modsecurity-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example \
+           /usr/local/modsecurity-crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf && \
+        mv /usr/local/modsecurity-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example \
+           /usr/local/modsecurity-crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+      register: move_crs_files
+      changed_when: move_crs_files.rc == 0
+
+    - name: Create ModSecurity configuration directory
+      file:
+        path: /etc/nginx/modsec
+        state: directory
+        mode: '0755'
+
+    - name: Copy ModSecurity configuration files
+      copy:
+        src: /usr/local/ModSecurity/unicode.mapping
+        dest: /etc/nginx/modsec/unicode.mapping
+        mode: '0644'
+
+    - name: Copy recommended ModSecurity configuration
+      copy:
+        src: /usr/local/ModSecurity/modsecurity.conf-recommended
+        dest: /etc/nginx/modsec/modsecurity.conf
+        mode: '0644'
+
+    - name: Configure ModSecurity engine
+      lineinfile:
+        path: /etc/nginx/modsec/modsecurity.conf
+        regexp: '^#?SecRuleEngine'
+        line: 'SecRuleEngine On'
+
+    - name: Create main.conf for ModSecurity
+      copy:
+        dest: /etc/nginx/modsec/main.conf
+        mode: '0644'
+        content: |
+          Include /etc/nginx/modsec/modsecurity.conf
+          Include /usr/local/modsecurity-crs/crs-setup.conf
+          Include /usr/local/modsecurity-crs/rules/*.conf
