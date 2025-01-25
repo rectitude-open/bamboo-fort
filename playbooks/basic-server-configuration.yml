@@ -1,0 +1,169 @@
+- name: Basic Server Configuration
+  hosts: all
+  remote_user: root
+  vars:
+    swap_size: '2G'
+  vars_prompt:
+    - name: host_name
+      prompt: 'Enter the hostname for this server'
+      private: false
+    - name: enable_fastest_mirror
+      prompt: 'Enable the Fastest Mirror Plugin? (Y/n)'
+      private: false
+      default: 'Y'
+    - name: add_swapfile
+      prompt: 'Do you want to configure a swapfile? (Y/n)'
+      private: false
+      default: 'Y'
+
+  tasks:
+    - name: Set hostname
+      command: hostnamectl set-hostname {{ host_name }}
+      register: hostname_result
+      changed_when: hostname_result.rc != 0
+
+    - name: Install packages
+      dnf:
+        name:
+          - lrzsz
+          - dnf-automatic
+          - htop
+        state: present
+
+    - name: Enable Fastest Mirror Plugin
+      ini_file:
+        path: /etc/dnf/dnf.conf
+        section: main
+        option: fastestmirror
+        value: 'True'
+        mode: '0644'
+      when: enable_fastest_mirror | lower == 'y'
+
+    - name: Configure .vimrc
+      copy:
+        dest: ~/.vimrc
+        content: |
+          syntax on
+          set autoindent
+          set smartindent
+          set hlsearch
+          set showmatch
+          set tabstop=4
+          set shiftwidth=4
+          set expandtab
+        mode: '0644'
+
+    - name: Add alias ll to .bashrc
+      lineinfile:
+        path: ~/.bashrc
+        line: "alias ll='ls -alh'"
+      notify:
+        - reload bashrc
+      when: "'alias ll' not in lookup('file', '~/.bashrc')"
+
+    - name: Configure system messages
+      copy:
+        dest: '{{ item }}'
+        content: |
+          ***Warning***
+          Authorised access only! This is a private system.
+          All connections are monitored and recorded.
+          Unauthorized access or use may lead to prosecution.
+          Disconnect IMMEDIATELY if you are not an authorized user!
+        mode: '0644'
+      with_items:
+        - /etc/issue
+        - /etc/issue.net
+        - /etc/motd
+      timeout: 10
+
+    - name: Configure dnf-automatic for security updates
+      lineinfile:
+        path: /etc/dnf/automatic.conf
+        regexp: '^upgrade_type ='
+        line: 'upgrade_type = security'
+        state: present
+      notify:
+        - enable dnf-automatic
+
+    - name: Enable and start dnf-automatic timer
+      systemd:
+        name: dnf-automatic.timer
+        enabled: true
+        state: started
+
+    - name: Update system packages (/tmp/dnf_update_output.log)
+      shell: |
+        set -o pipefail
+        dnf upgrade -y | tee /tmp/dnf_update_output.log
+      register: update_output
+      changed_when: update_output.rc != 0
+
+    - name: Display reboot message
+      debug:
+        msg: 'The system has been updated. Please consider rebooting your computer.'
+
+    - name: Install util-linux (required for swapfile creation)
+      dnf:
+        name: util-linux
+        state: present
+      when: add_swapfile | lower == 'y'
+
+    - block:
+        - name: Create a swapfile
+          command: fallocate -l {{ swap_size }} /swapfile
+          args:
+            creates: /swapfile
+
+        - name: Secure the swapfile
+          file:
+            path: /swapfile
+            owner: root
+            group: root
+            mode: '0600'
+
+        - name: Format the swapfile
+          command: mkswap /swapfile
+          args:
+            creates: /swapfile
+
+        - name: Enable swapfile
+          command: swapon /swapfile
+          register: swapfile_enable
+          changed_when: swapfile_enable.rc == 0
+      rescue:
+        - name: Report swapfile creation failure
+          debug:
+            msg: 'Failed to create or enable swapfile'
+      when: add_swapfile | lower == 'y'
+
+    - name: Update sysctl.conf for swappiness
+      lineinfile:
+        path: /etc/sysctl.conf
+        regexp: '^vm.swappiness='
+        line: 'vm.swappiness=1'
+        state: present
+      when: add_swapfile | lower == 'y'
+      notify: reload system daemon
+
+    - name: Update fstab for swapfile
+      lineinfile:
+        path: /etc/fstab
+        line: '/swapfile    swap    swap    defaults    0    0'
+        state: present
+      when: add_swapfile | lower == 'y'
+      notify: reload system daemon
+
+  handlers:
+    - name: reload bashrc
+      command: bash -c "source ~/.bashrc"
+
+    - name: enable dnf-automatic
+      systemd:
+        name: dnf-automatic.timer
+        enabled: true
+        state: started
+
+    - name: reload system daemon
+      systemd:
+        daemon_reload: true
