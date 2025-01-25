@@ -85,7 +85,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['bash', 'vim', 'ini'],
+      additionalLanguages: ['bash', 'vim', 'ini', 'apacheconf', 'diff'],
     },
   } satisfies Preset.ThemeConfig,
 };
