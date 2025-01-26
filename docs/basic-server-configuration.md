@@ -29,8 +29,6 @@ hostnamectl set-hostname <host-name>
 
 ```vim title="~/.vimrc"
 syntax on
-set autoindent
-set smartindent
 set hlsearch
 set showmatch
 set tabstop=4

@@ -44,8 +44,6 @@
         dest: ~/.vimrc
         content: |
           syntax on
-          set autoindent
-          set smartindent
           set hlsearch
           set showmatch
           set tabstop=4
