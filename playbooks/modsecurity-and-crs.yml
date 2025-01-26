@@ -41,7 +41,7 @@
       git:
         repo: https://github.com/SpiderLabs/ModSecurity
         dest: /usr/local/ModSecurity
-        version: latest
+        version: v3/master
         force: true
 
     - name: Build ModSecurity (/tmp/modsecurity_build_output.log)
@@ -61,14 +61,14 @@
       git:
         repo: https://github.com/owasp-modsecurity/ModSecurity-nginx
         dest: /usr/local/ModSecurity-nginx
-        version: latest
+        version: master
         force: true
 
     - name: Clone OWASP ModSecurity Core Rule Set
       git:
         repo: https://github.com/coreruleset/coreruleset
         dest: /usr/local/modsecurity-crs
-        version: latest
+        version: main
         force: true
 
     - name: Move example CRS setup files
