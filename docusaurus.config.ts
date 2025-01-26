@@ -57,7 +57,7 @@ const config: Config = {
       title: 'BambooFort Collective',
       logo: {
         alt: 'BambooFort Collective Logo',
-        src: 'img/logo.svg',
+        src: 'img/logo.png',
       },
       items: [
         {
