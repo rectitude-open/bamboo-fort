@@ -58,7 +58,7 @@ systemctl status nginx
   </TabItem>
   <TabItem value="ansible" label={<><img src="/img/ansible-icon.svg" className="ansible-icon" />Ansible Playbook</>}>
 
-```yml title="basic-server-configuration.yml" file=../playbooks/basic-server-configuration.yml
+```yml title="nginx.yml" file=../playbooks/nginx.yml
 
 ```
 
