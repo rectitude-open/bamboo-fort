@@ -2,20 +2,20 @@
   hosts: all
   remote_user: root
   vars:
-    nginx_version: '1.26.2'
-    run_group: 'www'
-    run_user: 'www'
+    nginx_version: "1.26.2"
+    run_group: "www"
+    run_user: "www"
 
   tasks:
     - name: Ensure group exists
       group:
-        name: '{{ run_group }}'
+        name: "{{ run_group }}"
         state: present
 
     - name: Ensure user exists
       user:
-        name: '{{ run_user }}'
-        group: '{{ run_group }}'
+        name: "{{ run_user }}"
+        group: "{{ run_group }}"
         shell: /sbin/nologin
         create_home: false
         state: present
@@ -40,20 +40,20 @@
     - name: Create Nginx cache directory
       file:
         path: /var/cache/nginx
-        owner: '{{ run_user }}'
-        group: '{{ run_group }}'
+        owner: "{{ run_user }}"
+        group: "{{ run_group }}"
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Download Nginx source code
       get_url:
-        url: 'http://nginx.org/download/nginx-{{ nginx_version }}.tar.gz'
-        dest: '/usr/local/src/nginx-{{ nginx_version }}.tar.gz'
+        url: "http://nginx.org/download/nginx-{{ nginx_version }}.tar.gz"
+        dest: "/usr/local/src/nginx-{{ nginx_version }}.tar.gz"
 
     - name: Extract Nginx source code
       unarchive:
-        src: '/usr/local/src/nginx-{{ nginx_version }}.tar.gz'
-        dest: '/usr/local/src/'
+        src: "/usr/local/src/nginx-{{ nginx_version }}.tar.gz"
+        dest: "/usr/local/src/"
         remote_src: true
 
     - name: Configure Nginx with ModSecurity
@@ -104,7 +104,7 @@
         --with-threads
         --add-module=/usr/local/ModSecurity-nginx
       args:
-        chdir: '/usr/local/src/nginx-{{ nginx_version }}'
+        chdir: "/usr/local/src/nginx-{{ nginx_version }}"
       register: configure_output
       changed_when: configure_output.rc != 0
 
@@ -114,7 +114,7 @@
         make -j$(nproc) | tee /tmp/nginx_build_output.log
         make install
       args:
-        chdir: '/usr/local/src/nginx-{{ nginx_version }}'
+        chdir: "/usr/local/src/nginx-{{ nginx_version }}"
       register: build_output
       changed_when: build_output.rc != 0
 
@@ -125,7 +125,7 @@
     - name: Create systemd service for Nginx
       copy:
         dest: /etc/systemd/system/nginx.service
-        mode: '0644'
+        mode: "0644"
         content: |
           [Unit]
           Description=The NGINX HTTP and reverse proxy server
@@ -148,16 +148,16 @@
       file:
         path: /usr/local/nginx/conf/vhosts
         state: directory
-        owner: '{{ run_user }}'
-        group: '{{ run_group }}'
-        mode: '0755'
+        owner: "{{ run_user }}"
+        group: "{{ run_group }}"
+        mode: "0755"
 
     - name: Deploy Nginx main configuration file
       copy:
         dest: /usr/local/nginx/conf/nginx.conf
-        owner: '{{ run_user }}'
-        group: '{{ run_group }}'
-        mode: '0644'
+        owner: "{{ run_user }}"
+        group: "{{ run_group }}"
+        mode: "0644"
         content: |
           user {{ run_user }} {{ run_group }};
           worker_processes auto;

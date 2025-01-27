@@ -86,30 +86,30 @@
       file:
         path: /etc/nginx/modsec
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Copy ModSecurity configuration files
       copy:
         src: /usr/local/ModSecurity/unicode.mapping
         dest: /etc/nginx/modsec/unicode.mapping
-        mode: '0644'
+        mode: "0644"
 
     - name: Copy recommended ModSecurity configuration
       copy:
         src: /usr/local/ModSecurity/modsecurity.conf-recommended
         dest: /etc/nginx/modsec/modsecurity.conf
-        mode: '0644'
+        mode: "0644"
 
     - name: Configure ModSecurity engine
       lineinfile:
         path: /etc/nginx/modsec/modsecurity.conf
-        regexp: '^#?SecRuleEngine'
-        line: 'SecRuleEngine On'
+        regexp: "^#?SecRuleEngine"
+        line: "SecRuleEngine On"
 
     - name: Create main.conf for ModSecurity
       copy:
         dest: /etc/nginx/modsec/main.conf
-        mode: '0644'
+        mode: "0644"
         content: |
           Include /etc/nginx/modsec/modsecurity.conf
           Include /usr/local/modsecurity-crs/crs-setup.conf
