@@ -1,0 +1,222 @@
+- name: Compile and install PHP
+  hosts: all
+  remote_user: root
+  vars:
+    php_version: "8.3.15"
+    php_prefix: "/usr/local/php"
+    php_user: "www"
+    php_group: "www"
+
+  tasks:
+    - name: Install required dependencies
+      dnf:
+        name:
+          - gcc
+          - gcc-c++
+          - make
+          - libxml2-devel
+          - bzip2-devel
+          - curl-devel
+          - libpng-devel
+          - libjpeg-devel
+          - libXpm-devel
+          - freetype-devel
+          - gmp-devel
+          - libmcrypt-devel
+          - oniguruma-devel
+          - libxslt-devel
+          - libzip-devel
+          - libwebp-devel
+          - zip
+          - cronie
+          - sqlite
+          - sqlite-devel
+          - systemd-devel
+        state: present
+
+    - name: Download PHP source code
+      get_url:
+        url: "https://www.php.net/distributions/php-{{ php_version }}.tar.gz"
+        dest: "/usr/local/src/php-{{ php_version }}.tar.gz"
+
+    - name: Extract PHP source code
+      unarchive:
+        src: "/usr/local/src/php-{{ php_version }}.tar.gz"
+        dest: "/usr/local/src/"
+        remote_src: true
+
+    - name: Check if Makefile exists
+      stat:
+        path: "/usr/local/src/php-{{ php_version }}/Makefile"
+      register: makefile_stat
+
+    - name: Clean previous PHP build
+      command: make clean
+      args:
+        chdir: "/usr/local/src/php-{{ php_version }}"
+      when: makefile_stat.stat.exists
+
+    - name: Configure PHP
+      command: >
+        ./configure
+        --prefix={{ php_prefix }}
+        --enable-gd
+        --enable-soap
+        --enable-intl
+        --enable-bcmath
+        --enable-sockets
+        --enable-opcache
+        --enable-mbstring
+        --enable-pcntl
+        --enable-fpm
+        --with-config-file-path={{ php_prefix }}
+        --with-fpm-user={{ php_user }}
+        --with-fpm-group={{ php_group }}
+        --with-mysqli
+        --with-pdo-mysql
+        --with-openssl
+        --with-curl
+        --with-zip
+        --with-zlib
+        --with-bz2
+        --with-external-pcre
+        --with-jpeg
+        --with-freetype
+        --with-xsl
+        --with-pear
+      args:
+        chdir: "/usr/local/src/php-{{ php_version }}"
+      register: configure_output
+      changed_when: configure_output.rc != 0
+
+    - name: Compile and install PHP (/tmp/php_build_output.log)
+      shell: |
+        set -o pipefail
+        make -j"{{ ansible_processor_vcpus }}" | tee /tmp/php_build_output.log
+        make install
+      args:
+        chdir: "/usr/local/src/php-{{ php_version }}"
+      register: php_build_output
+      changed_when: php_build_output.rc != 0
+
+    - name: Copy php.ini production configuration
+      copy:
+        src: "/usr/local/src/php-{{ php_version }}/php.ini-production"
+        dest: "{{ php_prefix }}/php.ini"
+        remote_src: true
+        mode: "0644"
+
+    - name: Configure php.ini
+      vars:
+        php_settings:
+          - {key: "include_path", value: '".:/usr/local/php/lib/php"'}
+          - {key: "expose_php", value: "Off"}
+          - {key: "error_log", value: '"/var/log/php-error.log"'}
+          - {key: "max_execution_time", value: "30"}
+          - {key: "memory_limit", value: "128M"}
+          - {key: "post_max_size", value: "8M"}
+          - {key: "display_errors", value: "Off"}
+          - {key: "disable_functions", value: "exec,passthru,shell_exec,system,proc_open,popen,show_source"}
+          - {key: "mysqli.default_socket", value: "/run/mysqld.sock"}
+          - {key: "pdo_mysql.default_socket", value: "/run/mysqld.sock"}
+      lineinfile:
+        path: /usr/local/php/php.ini
+        regexp: "^{{ item.key }} ="
+        line: "{{ item.key }} = {{ item.value }}"
+        create: true
+        mode: "0644"
+      loop: "{{ php_settings }}"
+
+    - name: Copy default PHP-FPM configuration
+      copy:
+        src: "{{ php_prefix }}/etc/php-fpm.conf.default"
+        dest: "{{ php_prefix }}/etc/php-fpm.conf"
+        remote_src: false
+        mode: "0644"
+
+    - name: Update php-fpm.conf configuration
+      lineinfile:
+        path: "{{ php_prefix }}/etc/php-fpm.conf"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - {regexp: "^;?pid =", line: "pid = /run/php-fpm.pid"}
+        - {regexp: "^;?error_log =", line: "error_log = /var/log/php-fpm.log"}
+        - {regexp: "^;?log_level =", line: "log_level = notice"}
+
+    - name: Create log files
+      file:
+        path: "{{ item }}"
+        state: touch
+        owner: "{{ php_user }}"
+        group: "{{ php_group }}"
+        mode: "0640"
+      with_items:
+        - /var/log/php-fpm.log
+        - /var/log/php-error.log
+
+    - name: Set permissions for PHP directories
+      file:
+        path: "{{ php_prefix }}"
+        owner: "root"
+        group: "{{ php_group }}"
+        mode: "0750"
+        recurse: true
+
+    - name: Ensure PHP extensions directory is accessible
+      file:
+        path: "{{ php_prefix }}/lib/php/extensions"
+        owner: "root"
+        group: "{{ php_group }}"
+        mode: "0750"
+        recurse: true
+
+    - name: Set ownership and permissions for PHP-FPM configuration
+      file:
+        path: "{{ php_prefix }}/etc"
+        owner: "{{ php_user }}"
+        group: "{{ php_group }}"
+        mode: "0750"
+        recurse: true
+
+    - name: Ensure PHP-FPM log directory exists
+      file:
+        path: /var/log/php-fpm
+        state: directory
+        owner: "{{ php_user }}"
+        group: "{{ php_group }}"
+        mode: "0750"
+
+    - name: Create php-fpm systemd service file
+      copy:
+        dest: /etc/systemd/system/php-fpm.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=PHP FastCGI Process Manager
+          After=network.target
+
+          [Service]
+          Type=simple
+          RuntimeDirectory=php-fpm
+          RuntimeDirectoryMode=0750
+          RuntimeDirectoryOwner=www
+          RuntimeDirectoryGroup=www
+          PIDFile=/run/php-fpm.pid
+          ExecStart=/usr/local/php/sbin/php-fpm --nodaemonize --fpm-config /usr/local/php/etc/php-fpm.conf
+          ExecReload=/bin/kill -USR2 $MAINPID
+          ExecStop=/bin/kill -SIGQUIT $MAINPID
+          PrivateTmp=true
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: true
+
+    - name: Enable and start PHP-FPM
+      systemd:
+        name: php-fpm
+        enabled: true
+        state: started
