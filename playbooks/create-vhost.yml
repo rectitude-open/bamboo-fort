@@ -1,0 +1,144 @@
+- name: Create Virtual Host
+  hosts: all
+  remote_user: root
+  vars:
+    domain: "aaa.com" # Primary domain
+    additional_domains: ["www.aaa.com"] # Additional domains (can be multiple)
+    web_user: "aaa" # Website user
+    web_group: "aaa" # Website group
+    nginx_group: "www" # Nginx group
+    php_fpm_socket: "/run/php-fpm-{{ web_user }}.sock" # PHP-FPM socket path
+    web_root: "/home/wwwroot/{{ domain }}" # Website root directory
+    log_dir: "/home/wwwlogs/{{ domain }}" # Log directory
+
+  tasks:
+    - name: Ensure the group for website user exists
+      group:
+        name: "{{ web_group }}"
+        state: present
+
+    - name: Ensure the user for website exists
+      user:
+        name: "{{ web_user }}"
+        group: "{{ web_group }}"
+        shell: /sbin/nologin
+        create_home: false
+        state: present
+
+    - name: Create necessary directories
+      file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - {path: "{{ web_root }}", owner: "{{ web_user }}", group: "{{ nginx_group }}", mode: "0750"}
+        - {path: "{{ web_root }}/public", owner: "{{ web_user }}", group: "{{ nginx_group }}", mode: "0750"}
+        - {path: "{{ web_root }}/tmp", owner: "{{ web_user }}", group: "{{ nginx_group }}", mode: "0750"}
+        - {path: "{{ log_dir }}", owner: "{{ web_user }}", group: "{{ nginx_group }}", mode: "0755"}
+
+    - name: Create necessary log files
+      file:
+        path: "{{ item }}"
+        state: touch
+        owner: "{{ web_user }}"
+        group: "{{ nginx_group }}"
+        mode: "0640"
+      loop:
+        - "{{ log_dir }}/php-error.log"
+        - "{{ log_dir }}/access.log"
+        - "{{ log_dir }}/error.log"
+
+    - name: Deploy Nginx virtual host configuration
+      copy:
+        dest: "/usr/local/nginx/conf/vhosts/{{ domain }}.conf"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        content: |
+          server {
+              server_tokens off;
+              listen 80;
+              server_name {{ domain }} {% for subdomain in additional_domains %} {{ subdomain }} {% endfor %};
+              root {{ web_root }}/public;
+              index index.php index.html index.htm;
+
+              access_log /var/log/nginx/access_for_fail2ban.log combined if=$fail2banlog;
+              access_log {{ log_dir }}/access.log;
+              error_log {{ log_dir }}/error.log;
+
+              modsecurity on;
+              modsecurity_rules_file /etc/nginx/modsec/main.conf;
+
+              location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|otf|eot)$ {
+                  sendfile on;
+                  tcp_nopush on;
+                  expires 2d;
+                  access_log off;
+              }
+
+              location / {
+                  limit_req zone=req_limit_20 burst=50;
+                  try_files $uri $uri/ /index.php?$args;
+                  expires -1;
+                  add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate";
+              }
+
+              location ~ \.php$ {
+                  limit_req zone=req_limit_10 burst=30;
+                  sendfile off;
+                  tcp_nopush off;
+                  if ($request_method !~ ^(HEAD|OPTIONS|GET|POST|PUT|PATCH|DELETE)$ ) {
+                      return 405;
+                  }
+
+                  include fastcgi_params;
+                  fastcgi_pass unix:{{ php_fpm_socket }};
+                  fastcgi_index index.php;
+                  fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+              }
+
+              location ~* ^/wp-content/uploads/.*\.php$ { deny all; }
+              location ~* ^/wp-content/cache/.*\.php$ { deny all; }
+              location ~* ^/wp-content/backup/.*\.php$ { deny all; }
+
+              location ~ /\.(ht|git|svn|vscode|DS_Store|idea|env|project|settings|history) {
+                  deny all;
+              }
+          }
+
+    - name: Deploy PHP-FPM configuration
+      copy:
+        dest: "/usr/local/php/etc/php-fpm.d/{{ domain }}.conf"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        content: |
+          [{{ web_user }}]
+          user = {{ web_user }}
+          group = {{ web_group }}
+          listen = {{ php_fpm_socket }}
+          listen.owner = {{ web_user }}
+          listen.group = {{ nginx_group }}
+          listen.mode = 0660
+          pm = dynamic
+          pm.max_children = 10
+          pm.start_servers = 2
+          pm.min_spare_servers = 1
+          pm.max_spare_servers = 3
+          php_admin_value[session.save_path] = {{ web_root }}/tmp
+          php_admin_flag[log_errors] = on
+          php_admin_value[error_log] = {{ log_dir }}/php-error.log
+          php_admin_value[open_basedir] = {{ web_root }}:/tmp:/var/tmp/
+          security.limit_extensions = .php
+
+    - name: Restart PHP-FPM
+      systemd:
+        name: php-fpm
+        state: restarted
+
+    - name: Reload Nginx
+      systemd:
+        name: nginx
+        state: reloaded
