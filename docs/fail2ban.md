@@ -40,7 +40,7 @@ systemctl enable firewalld
 dnf install -y fail2ban GeoIP GeoIP-data python3-inotify
 ```
 
-### Add Nginx 4xx/5xx Filter
+### Create Nginx 4xx/5xx Filter
 
 ```ini title="/etc/fail2ban/filter.d/nginx-4xx-5xx.conf"
 [Definition]
@@ -48,7 +48,7 @@ failregex =  ^<HOST>.*"(GET|POST|HEAD|PUT|DELETE|OPTIONS|PATCH).*" (4\d{2}|5\d{2
 ignoreregex =.*(robots.txt|favicon.ico)
 ```
 
-### Add Fail2Ban Jail
+### Create Fail2Ban Jail
 
 ```ini title="/etc/fail2ban/jail.local"
 [DEFAULT]
@@ -190,9 +190,16 @@ fail2ban-client set sshd banip <ip-address>
 fail2ban-client set nginx-4xx-5xx unbanip <ip-address>
 ```
 
-### Official Documentation
+### Fail2ban Official Documentation
 
 https://github.com/fail2ban/fail2ban/wiki/Best-practice
+
+### Find failed ssh login attempts
+
+```bash
+tail -f /var/log/secure
+grep 'sshd.*Failed password for' /var/log/secure
+```
 
   </TabItem>
   <TabItem value="ansible" label={<><img src="/img/ansible-icon.svg" className="ansible-icon" />Ansible Playbook</>}>
