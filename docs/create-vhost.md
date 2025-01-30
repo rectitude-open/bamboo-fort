@@ -68,11 +68,6 @@ server {
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
     }
 
-    # Deny access to sensitive files
-    location ~* ^/wp-content/uploads/.*\.php$ { deny all; }
-    location ~* ^/wp-content/cache/.*\.php$ { deny all; }
-    location ~* ^/wp-content/backup/.*\.php$ { deny all; }
-
     location ~ /\.(ht|git|svn|vscode|DS_Store|idea|env|project|settings|history) {
         deny all;
     }
@@ -139,6 +134,27 @@ server {
     ssl_session_cache shared:SSL:10m;
     ssl_stapling on;
     ssl_stapling_verify on;
+}
+```
+
+### Deny access to sensitive files
+
+```nginx
+server {
+    location ~* ^/wp-content/uploads/.*\.php$ { deny all; }
+    location ~* ^/wp-content/cache/.*\.php$ { deny all; }
+    location ~* ^/wp-content/backup/.*\.php$ { deny all; }
+}
+```
+
+### Restrict Access to Admin Area
+
+```nginx
+server {
+    location /admin {
+        allow 192.168.1.0/24;
+        deny all;
+    }
 }
 ```
 
