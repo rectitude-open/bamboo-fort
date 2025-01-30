@@ -1,0 +1,128 @@
+- name: Install and Configure Fail2Ban
+  hosts: all
+  remote_user: root
+  vars:
+    email_dest: "receiver@domain.com"
+    email_sender: "sender@your-domain.com"
+    fail2ban_ignore_ip: "10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
+    nginx_log_path: "/var/log/nginx/access_for_fail2ban.log"
+
+  tasks:
+    - name: Install required packages
+      dnf:
+        name:
+          - fail2ban
+          - GeoIP
+          - GeoIP-data
+          - python3-inotify
+        state: present
+
+    - name: Deploy Fail2Ban filter for nginx 4xx/5xx
+      copy:
+        dest: "/etc/fail2ban/filter.d/nginx-4xx-5xx.conf"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        content: |
+          [Definition]
+          failregex =  ^<HOST>.*"(GET|POST|HEAD|PUT|DELETE|OPTIONS|PATCH).*" (4\d{2}|5\d{2}) .*$
+          ignoreregex =.*(robots.txt|favicon.ico)
+
+    - name: Deploy Fail2Ban jail configuration
+      copy:
+        dest: "/etc/fail2ban/jail.local"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        content: |
+          [DEFAULT]
+          banaction = firewallcmd-rich-rules[actiontype=<multiport>]
+          banaction_allports = firewallcmd-rich-rules[actiontype=<allports>]
+          ignoreip = {{ fail2ban_ignore_ip }}
+          action = sendmail-geoip-lines
+          sender = {{ email_sender }}
+          dest = {{ email_dest }}
+          destemail =
+
+          [nginx-4xx-5xx]
+          enabled = true
+          logpath = {{ nginx_log_path }}
+          filter = nginx-4xx-5xx
+          action = firewallcmd-rich-rules[name=nginx-4xx-5xx, port="80,443", protocol=tcp]
+                  sendmail-geoip-lines
+          findtime = 10
+          maxretry = 20
+          bantime = 3600
+          bantime.increment = true
+          bantime.rndtime = 300
+          bantime.maxtime = 86400
+          bantime.overalljails = true
+
+          [sshd]
+          enabled = true
+          findtime = 3600
+          maxretry = 5
+          bantime = 7200
+
+    - name: Deploy Fail2Ban sendmail-geoip-lines action
+      copy:
+        dest: "/etc/fail2ban/action.d/sendmail-geoip-lines.conf"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        content: |
+          [INCLUDES]
+          before = sendmail-common.conf
+                   helpers-common.conf
+
+          [Definition]
+          norestored = 1
+
+          actionban = ( printf %%b "Subject: [Fail2Ban] <name>: banned <ip> from <fq-hostname>
+                      Date: `LC_ALL=C date +"%%a, %%d %%h %%Y %%T %%z"`
+                      From: <sendername> <<sender>>
+                      To: <dest>\n
+                      Hi,\n
+                      The IP <ip> has just been banned by Fail2Ban after
+                      <failures> attempts against <name>.\n\n
+                      Country:`geoiplookup -f /usr/share/GeoIP/GeoIP.dat "<ip>" | cut -d':' -f2-`
+                      hostname: <ip-host>\n\n
+                      Information from ipinfo.io:\n
+                      `curl -s "https://ipinfo.io/<ip>" | jq '.'`\n\n
+                      Information from ip-api.com:\n
+                      `curl -s "http://ip-api.com/json/<ip>" | jq '.'`\n\n
+                      Lines containing failures of <ip> (max <grepmax>)\n";
+                      %(_grep_logs)s;
+                      printf %%b "\n
+                      Regards,\n
+                      Fail2Ban" ) | <mailcmd>
+
+          [Init]
+          name = default
+          logpath = /dev/null
+
+    - name: Deploy Fail2Ban sendmail-common configuration
+      copy:
+        dest: "/etc/fail2ban/action.d/sendmail-common.local"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        content: |
+          [Definition]
+          actionstart =
+          actionstop =
+          actioncheck =
+          actionban =
+          actionunban =
+
+          [Init]
+          mailcmd = /usr/sbin/sendmail -f "<sender>" "<dest>"
+          dest = {{ email_dest }}
+          sender = {{ email_sender }}
+          sendername = Server1-Fail2Ban
+
+    - name: Enable and start Fail2Ban
+      systemd:
+        name: fail2ban
+        enabled: true
+        state: started
