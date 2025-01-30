@@ -13,7 +13,7 @@ The following configuration is based on **Almalinux 9.5**.
 <Tabs className="type-tabs" groupId="type" queryString>
   <TabItem value="linux" label="🐧 Linux Command Line">
 
-## Main
+## Core
 
 ### Install ModSecurity
 

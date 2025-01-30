@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 <Tabs className="type-tabs" groupId="type" queryString>
   <TabItem value="linux" label="🐧 Linux Command Line">
 
-## Main
+## Core
 
 ### Install Nginx
 
