@@ -1,0 +1,90 @@
+- name: Install and Configure Postfix and S-Nail
+  hosts: all
+  remote_user: root
+  vars:
+    smtp_server: mail.spacemail.com
+    smtp_port: 465
+    sender_domain: no-reply.rectitude.cc
+    user_at_sender_domain: server@no-reply.rectitude.cc
+    password: "******"
+    mail_sender_name: "WebServer1"
+    current_hostname: "server.rectitude.cc"
+
+  tasks:
+    - name: Install Postfix and S-Nail
+      dnf:
+        name:
+          - postfix
+          - s-nail
+        state: present
+
+    - name: Enable and start Postfix
+      systemd:
+        name: postfix
+        enabled: true
+        state: started
+
+    - name: Set Postfix as default MTA
+      expect:
+        command: alternatives --config mta
+        responses:
+          "Enter to keep the current selection": "2"
+
+    - name: Configure Postfix main.cf
+      lineinfile:
+        path: /etc/postfix/main.cf
+        regexp: "^{{ item.key }} ="
+        line: "{{ item.key }} = {{ item.value }}"
+        create: true
+        mode: "0644"
+      loop:
+        - {key: "relayhost", value: "[{{ smtp_server }}]:{{ smtp_port }}"}
+        - {key: "smtp_sasl_auth_enable", value: "yes"}
+        - {key: "smtp_sasl_password_maps", value: "hash:/etc/postfix/sasl_passwd"}
+        - {key: "smtp_sasl_security_options", value: "noanonymous"}
+        - {key: "smtp_sasl_tls_security_options", value: "noanonymous"}
+        - {key: "smtp_tls_wrappermode", value: "yes"}
+        - {key: "smtp_tls_security_level", value: "encrypt"}
+        - {key: "myhostname", value: "{{ current_hostname }}"}
+        - {key: "myorigin", value: "{{ sender_domain }}"}
+        - {key: "sender_canonical_maps", value: "hash:/etc/postfix/sender_canonical"}
+
+    - name: Configure SASL password file
+      copy:
+        dest: /etc/postfix/sasl_passwd
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          [{{ smtp_server }}]:{{ smtp_port }} {{ user_at_sender_domain }}:{{ password }}
+
+    - name: Run postmap for sasl_passwd
+      command: postmap /etc/postfix/sasl_passwd
+      register: postmap_sasl_passwd
+      changed_when: postmap_sasl_passwd.rc != 0
+
+    - name: Configure sender_canonical
+      copy:
+        dest: /etc/postfix/sender_canonical
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          root@{{ sender_domain }} {{ user_at_sender_domain }}
+
+    - name: Run postmap for sender_canonical
+      command: postmap /etc/postfix/sender_canonical
+      register: postmap_sender_canonical
+      changed_when: postmap_sender_canonical.rc != 0
+
+    - name: Configure S-Nail ~/.mailrc
+      copy:
+        dest: "~/.mailrc"
+        mode: "0644"
+        content: |
+          set from="{{ mail_sender_name }} <{{ user_at_sender_domain }}>"
+
+    - name: Restart Postfix
+      systemd:
+        name: postfix
+        state: restarted
