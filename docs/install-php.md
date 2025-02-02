@@ -2,7 +2,7 @@
 title: Install PHP
 description: Install php.
 slug: /install-php
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 import Tabs from '@theme/Tabs';

@@ -8,8 +8,6 @@ sidebar_position: 2
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-The following configuration is based on **Almalinux 9.5**.
-
 <Tabs className="type-tabs" groupId="type" queryString>
   <TabItem value="linux" label="🐧 Linux Command Line">
 

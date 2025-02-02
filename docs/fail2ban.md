@@ -2,7 +2,7 @@
 title: Firewalld & Fail2Ban
 description: Firewalld & Fail2Ban
 slug: /firewalld-fail2ban
-sidebar_position: 7
+sidebar_position: 8
 ---
 
 import Tabs from '@theme/Tabs';
