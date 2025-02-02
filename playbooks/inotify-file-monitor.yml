@@ -1,0 +1,87 @@
+- name: Install and Configure Inotify File Monitor
+  hosts: all
+  remote_user: root
+  vars:
+    monitor_dirs: "/home/wwwroot/aaa.com/public/wp-admin /home/wwwroot/aaa.com/public/wp-includes"
+    exclude_pattern: "(^/home/wwwroot/aaa.com/public/wp-admin/images)"
+    email_to: "admin@rectitude.cc"
+    email_subject: "File Tampering Detected"
+    buffer_time: 60
+    log_file: "/var/log/inotify_file_monitor.log"
+    service_name: "inotify-file-monitor"
+    script_path: "/usr/local/inotify-file-monitor/inotify-file-monitor.sh"
+    systemd_service_path: "/etc/systemd/system/inotify-file-monitor.service"
+
+  tasks:
+    - name: Install inotify-tools
+      dnf:
+        name: inotify-tools
+        state: present
+
+    - name: Ensure inotify-file-monitor directory exists
+      file:
+        path: "/usr/local/inotify-file-monitor"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy inotify file monitor script
+      copy:
+        dest: "{{ script_path }}"
+        owner: root
+        group: root
+        mode: "0755"
+        content: |
+          #!/bin/bash
+
+          MONITOR_DIRS="{{ monitor_dirs }}"
+          EXCLUDE_PATTERN="{{ exclude_pattern }}"
+          EMAIL_TO="{{ email_to }}"
+          EMAIL_SUBJECT="{{ email_subject }}"
+          BUFFER_TIME={{ buffer_time }}
+          LAST_EMAIL_TIME=0
+          LOG_FILE="{{ log_file }}"
+
+          inotifywait -m -r \
+            -e modify,create,delete,move \
+            --exclude "$EXCLUDE_PATTERN" \
+            $MONITOR_DIRS |
+          while read path action file; do
+            CURRENT_TIME=$(date +%s)
+            LOG_MESSAGE="$(TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S') [$action] $path$file"
+            echo "$LOG_MESSAGE" >> "$LOG_FILE"
+
+            if (( CURRENT_TIME - LAST_EMAIL_TIME > BUFFER_TIME )); then
+              echo -e "$LOG_MESSAGE\nCheck the log for details: $LOG_FILE" | mail -s "$EMAIL_SUBJECT" "$EMAIL_TO"
+              LAST_EMAIL_TIME=$CURRENT_TIME
+            fi
+          done
+
+    - name: Deploy systemd service for inotify monitor
+      copy:
+        dest: "{{ systemd_service_path }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Inotify File Monitor
+          After=network.target
+
+          [Service]
+          ExecStart={{ script_path }}
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: true
+
+    - name: Enable and start inotify-file-monitor service
+      systemd:
+        name: "{{ service_name }}"
+        enabled: true
+        state: started
