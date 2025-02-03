@@ -1,0 +1,75 @@
+- name: Install Linux Malware Detect
+  hosts: all
+  remote_user: root
+  vars:
+    email_addr: "admin@rectitude.cc"
+    inotify_docroot: "/home/wwwroot"
+
+  tasks:
+    - name: Ensure source directory exists
+      file:
+        path: "/usr/local/src"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Download Maldetect
+      get_url:
+        url: "https://www.rfxn.com/downloads/maldetect-current.tar.gz"
+        dest: "/usr/local/src/maldetect-current.tar.gz"
+
+    - name: Extract Maldetect
+      unarchive:
+        src: "/usr/local/src/maldetect-current.tar.gz"
+        dest: "/usr/local/src"
+        remote_src: true
+
+    - name: Find extracted folder
+      find:
+        paths: "/usr/local/src"
+        patterns: "maldetect-*"
+        file_type: directory
+        use_regex: true
+      register: found_maldetect
+
+    - name: Set folder fact
+      set_fact:
+        maldetect_dir: "{{ found_maldetect.files[0].path }}"
+
+    - name: Install Maldetect
+      command: "./install.sh"
+      args:
+        chdir: "{{ maldetect_dir }}"
+      register: install_output
+      changed_when: install_output.rc != 0
+
+    - name: Update Maldet signatures
+      command: maldet -u
+      register: update_signatures_output
+      changed_when: update_signatures_output.rc != 0
+
+    - name: Update Maldet version
+      command: maldet -d
+      register: update_version_output
+      changed_when: update_version_output.rc != 0
+
+    - name: Configure Maldet
+      vars:
+        settings:
+          - {key: "email_alert", value: "1"}
+          - {key: "email_addr", value: "{{ email_addr }}"}
+          - {key: "email_ignore_clean", value: "0"}
+          - {key: "autoupdate_signatures", value: "1"}
+          - {key: "cron_prune_days", value: "35"}
+          - {key: "quarantine_hits", value: "1"}
+          - {key: "quarantine_clean", value: "1"}
+          - {key: "scan_clamscan", value: "0"}
+          - {key: "inotify_docroot", value: "{{ inotify_docroot }}"}
+      lineinfile:
+        path: /usr/local/maldetect/conf.maldet
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        create: true
+        mode: "0644"
+      loop: "{{ settings }}"
