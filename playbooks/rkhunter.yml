@@ -1,0 +1,34 @@
+- name: Install and Configure RKHunter
+  hosts: all
+  remote_user: root
+
+  tasks:
+    - name: Install RKHunter
+      dnf:
+        name: rkhunter
+        state: present
+
+    - name: Update RKHunter
+      command: "rkhunter --update"
+      register: update_rkhunter
+      changed_when: update_rkhunter.rc != 0
+
+    - name: Update RKHunter file properties database
+      command: "rkhunter --propupd"
+      register: propupd_rkhunter
+      changed_when: propupd_rkhunter.rc != 0
+
+    - name: Ensure MAIL-ON-WARNING is set
+      lineinfile:
+        path: /etc/rkhunter.conf
+        regexp: "^MAIL-ON-WARNING="
+        line: "MAIL-ON-WARNING=admin@rectitude.cc"
+        create: true
+        mode: "0644"
+
+    - name: Configure RKHunter check cron job
+      cron:
+        name: "RKHunter Check"
+        minute: "0"
+        hour: "2"
+        job: "0 2 * * * taskset -c 0 nice -n 19 ionice -c3 /usr/bin/--update --check --skip-keypress --cronjob --nocolors"
