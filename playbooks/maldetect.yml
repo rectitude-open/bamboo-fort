@@ -44,16 +44,6 @@
       register: install_output
       changed_when: install_output.rc != 0
 
-    - name: Update Maldet signatures
-      command: maldet -u
-      register: update_signatures_output
-      changed_when: update_signatures_output.rc != 0
-
-    - name: Update Maldet version
-      command: maldet -d
-      register: update_version_output
-      changed_when: update_version_output.rc != 0
-
     - name: Configure Maldet
       vars:
         settings:
