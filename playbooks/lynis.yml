@@ -1,0 +1,70 @@
+- name: Install and Configure Lynis
+  hosts: all
+  remote_user: root
+
+  tasks:
+    - name: Install Lynis
+      yum:
+        name: lynis
+        state: present
+
+    - name: Create Lynis directory
+      file:
+        path: /usr/local/lynis
+        state: directory
+        mode: "0755"
+
+    - name: Create Lynis audit script
+      copy:
+        dest: /usr/local/lynis/run_lynis.sh
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          REPORT_DIR="/var/log/lynis/reports"
+          EVENT_DIR="/var/log/lynis/events"
+          mkdir -p "$REPORT_DIR" "$EVENT_DIR"
+          DATE=$(date +%Y%m%d_%H%M%S)
+          REPORT_NAME="${DATE}.dat"
+          EVENT_NAME="${DATE}.log"
+          lynis audit system --nocolors > "$EVENT_DIR/$EVENT_NAME"
+          DEFAULT_REPORT="/var/log/lynis-report.dat"
+          if [ -f "$DEFAULT_REPORT" ]; then
+            cp "$DEFAULT_REPORT" "$REPORT_DIR/$REPORT_NAME"
+          fi
+
+    - name: Create Lynis comparison script
+      copy:
+        dest: /usr/local/lynis/compare_lynis.sh
+        mode: "0755"
+        content: |
+          {%- raw -%}
+          #!/bin/bash
+          REPORT_DIR="/var/log/lynis/reports"
+          FILES=($(ls -t "$REPORT_DIR"/*.dat | head -n 5))
+          if [[ ${#FILES[@]} -lt 2 ]]; then exit 1; fi
+          for i in "${!FILES[@]}"; do echo "$((i + 1)). $(basename "${FILES[i]}")"; done
+          read -p "Old report (1-${#FILES[@]}): " OLD_INDEX
+          read -p "New report (1-${#FILES[@]}): " NEW_INDEX
+          if ! [[ "$OLD_INDEX" =~ ^[1-5]$ ]] || ! [[ "$NEW_INDEX" =~ ^[1-5]$ ]] || [[ "$OLD_INDEX" == "$NEW_INDEX" ]]; then exit 1; fi
+          OLD_REPORT="${FILES[$((OLD_INDEX - 1))]}"
+          NEW_REPORT="${FILES[$((NEW_INDEX - 1))]}"
+          OLD_WARNINGS=$(awk -F'=\\[|\\]' '/^warning\[\]/ {print $2}' "$OLD_REPORT")
+          NEW_WARNINGS=$(awk -F'=\\[|\\]' '/^warning\[\]/ {print $2}' "$NEW_REPORT")
+          OLD_SUGGESTIONS=$(awk -F'=\\[|\\]' '/^suggestion\[\]/ {print $2}' "$OLD_REPORT")
+          NEW_SUGGESTIONS=$(awk -F'=\\[|\\]' '/^suggestion\[\]/ {print $2}' "$NEW_REPORT")
+          comm -23 <(echo "$OLD_WARNINGS" | sort) <(echo "$NEW_WARNINGS" | sort) | sed 's/^/Removed: /'
+          comm -13 <(echo "$OLD_WARNINGS" | sort) <(echo "$NEW_WARNINGS" | sort) | sed 's/^/Added: /'
+          comm -23 <(echo "$OLD_SUGGESTIONS" | sort) <(echo "$NEW_SUGGESTIONS" | sort) | sed 's/^/Removed: /'
+          comm -13 <(echo "$OLD_SUGGESTIONS" | sort) <(echo "$NEW_SUGGESTIONS" | sort) | sed 's/^/Added: /'
+          {%- endraw -%}
+
+    - name: Create Lynis log viewer script
+      copy:
+        dest: /usr/local/lynis/edit_latest_log.sh
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          LOG_DIR="/var/log/lynis/events"
+          LATEST_FILE=$(ls -t "$LOG_DIR"/*.log 2>/dev/null | head -n 1)
+          if [[ -z "$LATEST_FILE" ]]; then exit 1; fi
+          less -R "$LATEST_FILE"
