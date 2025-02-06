@@ -1,0 +1,210 @@
+- name: System Configuration
+  hosts: localhost
+  remote_user: root
+  vars:
+    ssh_port: "<ssh-port>"
+    hostname: "<hostname>"
+    fqdn: "<FQDN>"
+
+  tasks:
+    - name: Configure SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^{{ item.key }} "
+        line: "{{ item.key }} {{ item.value }}"
+        create: true
+        mode: "0600"
+      loop:
+        - {key: "Port", value: "{{ ssh_port }}"}
+        - {key: "Protocol", value: "2"}
+        - {key: "MaxAuthTries", value: "3"}
+        - {key: "X11Forwarding", value: "no"}
+        - {key: "AllowAgentForwarding", value: "no"}
+        - {key: "LogLevel", value: "VERBOSE"}
+        - {key: "MaxSessions", value: "2"}
+        - {key: "PermitRootLogin", value: "no"}
+
+    - name: Restart SSH service
+      systemd:
+        name: sshd
+        state: restarted
+
+    - name: Set file permissions
+      file:
+        path: "{{ item.path }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - {path: "/usr/bin/gcc", mode: "0700"}
+        - {path: "/usr/bin/g++", mode: "0700"}
+        - {path: "/usr/bin/make", mode: "0700"}
+        - {path: "/usr/bin/as", mode: "0700"}
+        - {path: "/usr/bin/ld", mode: "0700"}
+        - {path: "/usr/bin/cc", mode: "0700"}
+        - {path: "/etc/at.deny", mode: "0640"}
+        - {path: "/etc/cron.deny", mode: "0640"}
+        - {path: "/etc/crontab", mode: "0600"}
+        - {path: "/etc/cron.d", mode: "0700"}
+        - {path: "/etc/cron.daily", mode: "0700"}
+        - {path: "/etc/cron.hourly", mode: "0700"}
+        - {path: "/etc/cron.weekly", mode: "0700"}
+        - {path: "/etc/cron.monthly", mode: "0700"}
+
+    - name: Configure at.allow and cron.allow
+      file:
+        path: "{{ item.path }}"
+        state: touch
+        owner: root
+        group: root
+        mode: "0600"
+      loop:
+        - {path: "/etc/at.allow"}
+        - {path: "/etc/cron.allow"}
+
+    - name: Remove deny files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/at.deny
+        - /etc/cron.deny
+
+    - name: Configure sysctl
+      lineinfile:
+        path: /etc/sysctl.conf
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        create: true
+        mode: "0600"
+      loop:
+        - {key: "vm.swappiness", value: "1"}
+        - {key: "net.ipv4.ip_forward", value: "0"}
+        - {key: "net.ipv4.conf.all.accept_redirects", value: "0"}
+        - {key: "net.ipv4.conf.default.accept_redirects", value: "0"}
+        - {key: "net.ipv4.tcp_syncookies", value: "1"}
+        - {key: "net.ipv4.conf.all.accept_source_route", value: "0"}
+        - {key: "net.ipv4.conf.default.accept_source_route", value: "0"}
+        - {key: "dev.tty.ldisc_autoload", value: "0"}
+        - {key: "fs.protected_fifos", value: "2"}
+        - {key: "fs.protected_regular", value: "2"}
+        - {key: "fs.suid_dumpable", value: "0"}
+        - {key: "kernel.dmesg_restrict", value: "1"}
+        - {key: "kernel.kptr_restrict", value: "2"}
+        - {key: "kernel.sysrq", value: "0"}
+        - {key: "kernel.unprivileged_bpf_disabled", value: "1"}
+        - {key: "kernel.yama.ptrace_scope", value: "2"}
+        - {key: "net.core.bpf_jit_harden", value: "2"}
+        - {key: "net.ipv4.conf.all.log_martians", value: "1"}
+        - {key: "net.ipv4.conf.all.rp_filter", value: "1"}
+        - {key: "net.ipv4.conf.all.send_redirects", value: "0"}
+        - {key: "net.ipv4.conf.default.log_martians", value: "1"}
+        - {key: "net.ipv6.conf.all.accept_redirects", value: "0"}
+        - {key: "net.ipv6.conf.default.accept_redirects", value: "0"}
+
+    - name: Apply sysctl changes
+      command: sysctl -p
+      register: sysctl_output
+      changed_when: sysctl_output.rc != 0
+
+    - name: Disable core dumps
+      lineinfile:
+        path: /etc/security/limits.conf
+        regexp: "^\\* hard core"
+        line: "* hard core 0"
+        create: true
+        mode: "0644"
+
+    - name: Set UMASK
+      lineinfile:
+        path: /etc/login.defs
+        regexp: "^UMASK"
+        line: "UMASK 027"
+        create: true
+        mode: "0644"
+
+    - name: Configure /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        regexp: "^127.0.1.1"
+        line: "127.0.1.1   {{ hostname }} {{ fqdn }}"
+        create: true
+        mode: "0644"
+
+    - name: Prevent unnecessary kernel modules
+      copy:
+        dest: /etc/modprobe.d/blacklist.conf
+        mode: "0644"
+        content: |
+          blacklist usb-storage
+          options usb-storage modeset=0
+          install usb-storage /bin/true
+
+          blacklist firewire-core
+          options firewire-core modeset=0
+          install firewire-core /bin/true
+
+          blacklist dccp
+          options dccp modeset=0
+          install dccp /bin/true
+
+          blacklist sctp
+          options sctp modeset=0
+          install sctp /bin/true
+
+          blacklist rds
+          options rds modeset=0
+          install rds /bin/true
+
+          blacklist tipc
+          options tipc modeset=0
+          install tipc /bin/true
+
+    - name: Apply kernel module changes
+      command: dracut -f
+      register: dracut_output
+      changed_when: dracut_output.rc != 0
+
+    - name: Ensure audit rules
+      lineinfile:
+        path: /etc/audit/rules.d/audit.rules
+        regexp: "^-a always,exit -F arch=b64 -F path={{ item.path }}"
+        line: "-a always,exit -F arch=b64 -F path={{ item.path }} -F perm={{ item.perm }} -k {{ item.key }}"
+        create: true
+        mode: "0644"
+      loop:
+        - {path: "/etc/passwd", perm: "wa", key: "passwd_changes"}
+        - {path: "/etc/shadow", perm: "wa", key: "shadow_changes"}
+        - {path: "/etc/group", perm: "wa", key: "group_changes"}
+        - {path: "/etc/gshadow", perm: "wa", key: "gshadow_changes"}
+        - {path: "/var/log/secure", perm: "wa", key: "secure_logs"}
+        - {path: "/var/log/auth.log", perm: "wa", key: "auth_logs"}
+        - {path: "/usr/sbin/useradd", perm: "x", key: "user_mgmt"}
+        - {path: "/usr/sbin/usermod", perm: "x", key: "user_mgmt"}
+        - {path: "/usr/sbin/groupadd", perm: "x", key: "group_mgmt"}
+
+    - name: Apply audit rules
+      command: auditctl -R /etc/audit/rules.d/audit.rules
+      register: audit_rules_output
+      changed_when: audit_rules_output.rc != 0
+
+    - name: Create custom authselect profile
+      command: authselect create-profile custom-sssd --base-on=sssd
+      register: authselect_output
+      changed_when: authselect_output.rc != 0
+
+    - name: Update system-auth in custom profile
+      lineinfile:
+        path: /etc/authselect/custom/custom-sssd/system-auth
+        regexp: '^\s*password\s+sufficient\s+pam_unix.so'
+        line: "password    sufficient    pam_unix.so sha512 shadow nullok use_authtok rounds=50000"
+        create: true
+        backrefs: true
+        mode: "0644"
+
+    - name: Select custom authselect profile
+      command: authselect select custom/custom-sssd
+      register: authselect_select_output
+      changed_when: authselect_select_output.rc != 0
+
+    - name: Prompt for password change
+      debug:
+        msg: "Please run the 'passwd' command to apply new hashing to the current user."
