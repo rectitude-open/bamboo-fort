@@ -44,6 +44,21 @@ mkdir -p /usr/local/lynis
 
 ```
 
+### Skip Tests Based on Server Requirements
+
+ATTENTION: Skipping tests may lead to security vulnerabilities. Make sure you understand the implications before skipping any tests.
+
+```ini title="/etc/lynis/custom.prf"
+skip-test=NETW-3015
+skip-test=FILE-6310
+skip-test=AUTH-9284
+skip-test=AUTH-9286
+skip-test=AUTH-9282
+skip-test=FILE-6336
+skip-test=NAME-4028 # dns config
+skip-test=KRNL-6000:kernel.modules_disabled
+```
+
   </TabItem>
   <TabItem value="ansible" label={<><img src="/img/ansible-icon.svg" className="ansible-icon" />Ansible Playbook</>}>
 
