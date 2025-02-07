@@ -230,6 +230,39 @@ add_header X-Content-Type-Options "nosniff" always;
 
 ```
 
+### Check Security Headers
+
+https://securityheaders.com/
+
+### Nginx Header Examples
+
+A site with no external resources, allow inline scripts and styles, allow form actions to the same origin.
+
+```bash
+add_header Content-Security-Policy "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'";
+```
+
+A site with external resources, allow scripts from the same origin and from https://aaa.com, allow styles from the same origin and from https://bbb.com, allow images from the same origin and from https://ddd.com, allow fonts from the same origin and from https://ccc.com, allow form actions to the same origin, disallow iframes, allow ajax connections to the same origin.
+
+```bash
+add_header Content-Security-Policy "default-src 'none';
+base-uri 'self';
+object-src 'none';
+script-src 'self' https://aaa.com 'unsafe-inline';
+style-src 'self' https://bbb.com;
+img-src 'self' data: https://ddd.com;
+font-src 'self' https://ccc.com;
+form-action 'self';
+frame-ancestors 'none';
+connect-src 'self';
+```
+
+Disable unnecessary features
+
+```bash
+add_header Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=()";
+```
+
   </TabItem>
   <TabItem value="ansible" label={<><img src="/img/ansible-icon.svg" className="ansible-icon" />Ansible Playbook</>}>
 
