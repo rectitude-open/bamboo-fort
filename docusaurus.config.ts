@@ -93,6 +93,7 @@ const config: Config = {
         'diff',
         'systemd',
         'nginx',
+        'perl',
       ],
     },
   } satisfies Preset.ThemeConfig,
