@@ -25,7 +25,7 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className='button button--secondary button--lg'
-            to='/docs/intro'
+            to='/docs/basic-server-configuration'
           >
             Documentation
           </Link>
@@ -38,7 +38,10 @@ function HomepageHeader() {
 export default function Home(): ReactNode {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <Layout title={`Home`} description='xxxxxxxxxxxxxx'>
+    <Layout
+      title={`Home`}
+      description='A security implementation guide for web servers in low-resource environments.'
+    >
       <HomepageHeader />
       <main>
         <HomepageFeatures />
