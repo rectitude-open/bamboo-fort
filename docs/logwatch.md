@@ -42,10 +42,18 @@ logwatch --range yesterday
 # View report for today and send to email
 logwatch --range yesterday --mailto support@rectitude.cc
 # View report for today with medium detail and send to email
-logwatch --range today --detail med --mailto support@noreply.rectitude.cc
+logwatch --range today --detail med --mailto support@rectitude.cc
 
 # Built-in service configuration
 cd /usr/share/logwatch/default.conf/
+```
+
+### Schedule a daily logwatch report
+
+Run `crontab -e`
+
+```bash
+00 04 * * * /usr/sbin/logwatch --range yesterday --mailto support@rectitude.cc
 ```
 
 <!-- TODO: ADD Folder Structure -->
@@ -191,7 +199,7 @@ cd /usr/share/logwatch/default.conf/
   </TabItem>
   <TabItem value="ansible" label={<><img src="/img/ansible-icon.svg" className="ansible-icon" />Ansible Playbook</>}>
 
-```yml title="install-mariadb.yml" file=../playbooks/install-mariadb.yml
+```yml title="logwatch.yml" file=../playbooks/logwatch.yml
 
 ```
 

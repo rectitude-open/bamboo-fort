@@ -1,0 +1,69 @@
+- name: Install and configure logwatch
+  hosts: all
+  remote_user: root
+  vars:
+    mail_to: support@rectitude.cc
+    mail_from: server@noreply.rectitude.cc
+    cron_hour: "04"
+    cron_minute: "00"
+
+  tasks:
+    - name: Install logwatch using dnf
+      dnf:
+        name: logwatch
+        state: present
+      register: logwatch_install
+
+    - name: Create temporary directory for cloning repository
+      tempfile:
+        state: directory
+        suffix: bamboo-fort
+      register: temp_dir
+
+    - name: Clone specific files from GitHub repository
+      git:
+        repo: https://github.com/rectitude-open/bamboo-fort.git
+        dest: "{{ temp_dir.path }}"
+        version: v1
+        sparse_checkout:
+          - conf/logwatch
+
+    - name: Copy logwatch configuration files to /etc/logwatch
+      copy:
+        src: "{{ temp_dir.path }}/conf/logwatch/"
+        dest: /etc/logwatch/
+        owner: root
+        group: root
+        mode: "0644"
+        remote_src: true
+
+    - name: Copy default logwatch.conf to /etc/logwatch/conf
+      copy:
+        src: /usr/share/logwatch/default.conf/logwatch.conf
+        dest: /etc/logwatch/conf/logwatch.conf
+        force: true
+        remote_src: true
+        mode: "0644"
+
+    - name: Update logwatch.conf with required settings
+      vars:
+        settings:
+          - {key: "MailTo", value: "{{ mail_to }}"}
+          - {key: "MailFrom", value: "{{ mail_from }}"}
+          - {key: "Range", value: "trueterday"}
+          - {key: "Detail", value: "Med"}
+      lineinfile:
+        path: /etc/logwatch/conf/logwatch.conf
+        regexp: "^{{ item.key }} ="
+        line: "{{ item.key }} = {{ item.value }}"
+        create: true
+        mode: "0644"
+      loop: "{{ settings }}"
+
+    - name: Ensure cron job for logwatch is present
+      cron:
+        name: "logwatch daily report"
+        minute: "{{ cron_minute }}"
+        hour: "{{ cron_hour }}"
+        job: "/usr/sbin/logwatch --range yesterday --mailto {{ mail_to }}"
+        state: present
