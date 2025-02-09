@@ -7,7 +7,8 @@ import path from 'path';
 
 const config: Config = {
   title: 'BambooFort Collective',
-  tagline: 'xxxxxx',
+  tagline:
+    'A security implementation guide for web servers in low-resource environments.',
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
@@ -43,6 +44,7 @@ const config: Config = {
           editUrl: 'https://github.com/rectitude-open/bamboo-fort/',
           remarkPlugins: [[require('remark-code-snippets'), { sync: true }]],
         },
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -52,7 +54,7 @@ const config: Config = {
 
   themeConfig: {
     // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/social-card.png',
     navbar: {
       title: 'BambooFort Collective',
       logo: {
@@ -66,11 +68,11 @@ const config: Config = {
           position: 'left',
           label: 'Documentation',
         },
-        {
-          href: '#',
-          position: 'left',
-          label: 'Course',
-        },
+        // {
+        //   href: '#',
+        //   position: 'left',
+        //   label: 'Course',
+        // },
         {
           href: 'https://github.com/rectitude-open/bamboo-fort',
           label: 'GitHub',
