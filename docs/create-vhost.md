@@ -21,6 +21,8 @@ groupadd aaa && useradd -g aaa -s /sbin/nologin aaa
 mkdir -p /home/wwwroot/aaa.com/{public,tmp}
 chown -R aaa:www /home/wwwroot/aaa.com
 chmod -R 750 /home/wwwroot/aaa.com
+mkdir -p /home/wwwlogs/aaa.com/
+chown -R aaa:www /home/wwwlogs/aaa.com
 ```
 
 ### Create Nginx Configuration
@@ -72,6 +74,11 @@ server {
         deny all;
     }
 }
+```
+
+```bash
+touch /home/wwwlogs/aaa.com/access.log
+touch /home/wwwlogs/aaa.com/error.log
 ```
 
 ### Create PHP-FPM Configuration

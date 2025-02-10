@@ -75,3 +75,9 @@ cd nginx-${nginx_version}
 	--add-module=/usr/local/ModSecurity-nginx
 
 make && make install
+
+mkdir -p /var/log/nginx/
+touch /var/log/nginx/error.log
+touch /var/log/nginx/access.log
+chown -R www:www /var/log/nginx
+chmod -R 750 /var/log/nginx
