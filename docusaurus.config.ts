@@ -20,7 +20,7 @@ const config: Config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'rectitude-open', // Usually your GitHub org/user name.
-  projectName: 'bamboo-fort', // Usually your repo name.
+  projectName: 'bamboofort-collective', // Usually your repo name.
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -41,7 +41,7 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: 'https://github.com/rectitude-open/bamboo-fort/',
+          editUrl: 'https://github.com/rectitude-open/bamboofort-collective/',
           remarkPlugins: [[require('remark-code-snippets'), { sync: true }]],
         },
         blog: false,
@@ -74,7 +74,7 @@ const config: Config = {
         //   label: 'Course',
         // },
         {
-          href: 'https://github.com/rectitude-open/bamboo-fort',
+          href: 'https://github.com/rectitude-open/bamboofort-collective',
           label: 'GitHub',
           position: 'right',
         },
