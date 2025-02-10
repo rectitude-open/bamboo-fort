@@ -1,0 +1,13 @@
+/home/wwwlogs/*/access.log /home/wwwlogs/*/error.log {
+    monthly
+    rotate 6
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 www www
+    sharedscripts
+    postrotate
+        systemctl reload nginx > /dev/null 2>&1
+    endscript
+}
