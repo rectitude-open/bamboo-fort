@@ -25,6 +25,19 @@ systemctl enable --now dnf-automatic.timer
 hostnamectl set-hostname <host-name>
 ```
 
+### Start a Screen Session
+
+```bash
+# Reattach to a screen session or create a new one
+screen -R <session-name>
+
+# Detach from the current screen session
+# ctrl+a d
+
+# List all sessions
+# screen -ls
+```
+
 ### Configure Vim Editor
 
 ```vim title="~/.vimrc"
@@ -62,23 +75,11 @@ Disconnect IMMEDIATELY if you are not an authorized user!
 EOF
 ```
 
-### Manage Screen Sessions
-
-```bash
-# Reattach to a screen session or create a new one
-screen -R <session-name>
-
-# Detach from the current screen session
-ctrl+a d
-
-# List all sessions
-screen -ls
-```
-
 ### Update System Packages
 
 ```bash
 dnf upgrade -y
+# dnf upgrade -y = dnf update -y = yum update -y
 ```
 
 ### Reboot System
