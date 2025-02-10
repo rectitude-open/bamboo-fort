@@ -14,7 +14,7 @@ id -u ${run_user} >/dev/null 2>&1
 [ $? -ne 0 ] && useradd -g ${run_group} -M -s /sbin/nologin ${run_user}
 
 # Install required dependencies
-yum -y install wget gcc gcc-c++ make zlib-devel pcre-devel openssl-devel libxml2-devel libxslt-devel gd gd-devel perl-ExtUtils-Embed
+dnf -y install tar wget gcc gcc-c++ make zlib-devel pcre-devel openssl-devel libxml2-devel libxslt-devel gd gd-devel perl-ExtUtils-Embed
 
 # Create Nginx cache directory and set permissions
 mkdir -p /var/cache/nginx
