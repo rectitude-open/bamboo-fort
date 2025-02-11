@@ -1,0 +1,54 @@
+name: Deploy To V1 Server
+
+on:
+  push:
+    branches: [v1]
+  pull_request:
+    branches: [v1]
+    types: [closed]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+          version: latest
+
+      - name: Build project
+        run: npm run build
+
+      - name: Fix permissions
+        run: |
+          find dist/ -type d -exec chmod 755 {} \;
+          find dist/ -type f -exec chmod 644 {} \;
+
+      - name: Setup timestamp
+        run: |
+          echo "DEPLOY_TIMESTAMP=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+
+      - name: SSH Deploy
+        uses: easingthemes/ssh-deploy@v5.1.0
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.SERVER_IP }}
+          REMOTE_USER: ${{ secrets.SERVER_USER }}
+          REMOTE_PORT: ${{ secrets.SSH_PORT }}
+          SOURCE: dist/
+          TARGET: ${{ secrets.WEB_ROOT }}/releases/${{ env.DEPLOY_TIMESTAMP }}
+          ARGS: '-rlgoDzvc --checksum --chmod=D755,F644 --chown=${{ secrets.SERVER_USER }}:${{ secrets.SERVER_USER }}'
+          SCRIPT_AFTER: |
+            sudo chown -R www:www ${{ secrets.WEB_ROOT }}/releases/${{ env.DEPLOY_TIMESTAMP }}
+            sudo ln -sfn ${{ secrets.WEB_ROOT }}/releases/${{ env.DEPLOY_TIMESTAMP }} ${{ secrets.WEB_ROOT }}public
+            sudo find ${{ secrets.WEB_ROOT }}/releases/ -maxdepth 1 -type d -mtime +7 | xargs rm -rf
