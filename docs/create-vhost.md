@@ -138,7 +138,8 @@ server {
     ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES256-GCM-SHA384;
     ssl_prefer_server_ciphers on;
     ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:10m;
+    ssl_session_cache shared:le_nginx_SSL:10m;
+    ssl_session_tickets off;
     ssl_stapling on;
     ssl_stapling_verify on;
 }
@@ -211,8 +212,11 @@ ssl_prefer_server_ciphers on;
 # Reuse previous SSL sessions to reduce handshake frequency.
 ssl_session_timeout 1d;
 
-# Cache SSL sessions in memory; 10M can store approximately 10,000 sessions.
-ssl_session_cache shared:SSL:10m;
+# Cache SSL sessions in memory; 10M can store approximately 10,000 sessions. The name le_nginx_SSL can be customized.
+ssl_session_cache shared:le_nginx_SSL:10m;
+
+# Disable SSL session tickets to prevent session reuse attacks.
+ssl_session_tickets off;
 
 # Reduce certificate validation latency by verifying validity, slightly increasing server load.
 ssl_stapling on;
