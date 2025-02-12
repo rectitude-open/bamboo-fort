@@ -235,7 +235,7 @@ Port 22222
 ```bash
 # Disable TCP forwarding, preventing remote access to databases and internal services
 AllowTcpForwarding no
-# Disable password authentication to enforce SSH key authentication
+# Disable password authentication
 PasswordAuthentication no
 ```
 
