@@ -68,6 +68,11 @@ const config: Config = {
           position: 'left',
           label: 'Documentation',
         },
+        {
+          href: '#',
+          position: 'left',
+          label: 'This project is currently under development',
+        },
         // {
         //   href: '#',
         //   position: 'left',
