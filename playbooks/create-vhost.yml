@@ -82,7 +82,7 @@
                   limit_req zone=req_limit_20 burst=50;
                   try_files $uri $uri/ /index.php?$args;
                   expires -1;
-                  add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate";
+                  more_set_headers 'Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"';
               }
 
               location ~ \.php$ {

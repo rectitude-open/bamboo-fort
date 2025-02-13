@@ -55,7 +55,7 @@ server {
 
         try_files $uri $uri/ /index.php?$args;
         expires -1;
-        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate";
+        more_set_headers 'Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"';
     }
 
     location ~ \.php$ {
@@ -136,7 +136,8 @@ FLUSH PRIVILEGES;
 
 ```nginx
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
 
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES256-GCM-SHA384;
@@ -146,6 +147,7 @@ server {
     ssl_session_tickets off;
     ssl_stapling on;
     ssl_stapling_verify on;
+    more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
 }
 ```
 
@@ -228,20 +230,20 @@ ssl_stapling_verify on;
 
 # Add HSTS header to enforce HTTPS for one year, preventing downgrade attacks.
 # If your website or subdomains need to use HTTP in the future, they will be inaccessible.
-add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains";
 
 # Prevent embedding in iframes (clickjacking attacks).
 # If your business needs to embed third-party pages, this may be restricted.
-add_header X-Frame-Options "SAMEORIGIN" always;
+more_set_headers "X-Frame-Options: SAMEORIGIN";
 
 # Enable browser XSS filtering.
-add_header X-XSS-Protection "1; mode=block" always;
+more_set_headers "X-XSS-Protection: 1; mode=block";
 
 # Only allow loading resources from the same origin, affecting the loading of JS libraries from other domains.
-add_header Content-Security-Policy "default-src 'self';" always;
+more_set_headers "Content-Security-Policy: default-src 'self';";
 
 # Prevent the browser from guessing file types (e.g., .txt being parsed as .html).
-add_header X-Content-Type-Options "nosniff" always;
+more_set_headers "X-Content-Type-Options: nosniff";
 
 ```
 
@@ -254,28 +256,19 @@ https://securityheaders.com/
 A site with no external resources, allow inline scripts and styles, allow form actions to the same origin.
 
 ```bash
-add_header Content-Security-Policy "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'";
+more_set_headers "Content-Security-Policy: default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'";
 ```
 
 A site with external resources, allow scripts from the same origin and from https://aaa.com, allow styles from the same origin and from https://bbb.com, allow images from the same origin and from https://ddd.com, allow fonts from the same origin and from https://ccc.com, allow form actions to the same origin, disallow iframes, allow ajax connections to the same origin.
 
 ```bash
-add_header Content-Security-Policy "default-src 'none';
-base-uri 'self';
-object-src 'none';
-script-src 'self' https://aaa.com 'unsafe-inline';
-style-src 'self' https://bbb.com;
-img-src 'self' data: https://ddd.com;
-font-src 'self' https://ccc.com;
-form-action 'self';
-frame-ancestors 'none';
-connect-src 'self';
+more_set_headers "Content-Security-Policy: default-src 'none'; base-uri 'self'; object-src 'none'; script-src 'self' https://aaa.com 'unsafe-inline'; style-src 'self' https://bbb.com; img-src 'self' data: https://ddd.com; font-src 'self' https://ccc.com; form-action 'self'; frame-ancestors 'none'; connect-src 'self';";
 ```
 
 Disable unnecessary features
 
 ```bash
-add_header Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=()";
+more_set_headers "Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=()";
 ```
 
   </TabItem>
