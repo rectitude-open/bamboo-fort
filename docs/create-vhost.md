@@ -51,6 +51,8 @@ server {
 
     location / {
         limit_req zone=req_limit_20 burst=50;
+        limit_conn conn_limit 15;
+
         try_files $uri $uri/ /index.php?$args;
         expires -1;
         add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate";
@@ -58,6 +60,8 @@ server {
 
     location ~ \.php$ {
         limit_req zone=req_limit_10 burst=30;
+        limit_conn conn_limit 5;
+
         sendfile off;
         tcp_nopush off;
         if ($request_method !~ ^(HEAD|OPTIONS|GET|POST|PUT|PATCH|DELETE)$ ) {
