@@ -8,6 +8,17 @@
     nginx_log_path: "/var/log/nginx/access_for_fail2ban.log"
 
   tasks:
+    - name: Install Remi GPG key
+      rpm_key:
+        state: present
+        key: https://rpms.remirepo.net/RPM-GPG-KEY-remi
+
+    - name: Install Remi repository
+      dnf:
+        name: https://rpms.remirepo.net/enterprise/remi-release-9.rpm
+        state: present
+        disable_gpg_check: true
+
     - name: Install required packages
       dnf:
         name:

@@ -39,7 +39,7 @@ firewall-cmd --list-all
 
 ### Install Fail2Ban
 
-```
+```bash
 # dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
 dnf install -y fail2ban GeoIP GeoIP-data python3-inotify
 ```
