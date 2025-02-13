@@ -37,6 +37,13 @@
           - perl-ExtUtils-Embed
         state: present
 
+    - name: Clone headers-more-nginx-module
+      git:
+        repo: https://github.com/openresty/headers-more-nginx-module
+        dest: /usr/local/headers-more-nginx-module
+        version: master
+        force: true
+
     - name: Create Nginx cache directory
       file:
         path: /var/cache/nginx
@@ -102,6 +109,7 @@
         --with-stream_ssl_module
         --with-stream_ssl_preread_module
         --with-threads
+        --add-module=/usr/local/headers-more-nginx-module
         --add-module=/usr/local/ModSecurity-nginx
       args:
         chdir: "/usr/local/src/nginx-{{ nginx_version }}"
@@ -199,9 +207,9 @@
               client_header_buffer_size 1k;
               large_client_header_buffers 2 1k;
 
-              add_header X-Frame-Options "SAMEORIGIN" always;
-              add_header X-XSS-Protection "1; mode=block" always;
-              add_header X-Content-Type-Options "nosniff" always;
+              more_set_headers 'X-Frame-Options "SAMEORIGIN" always';
+              more_set_headers 'X-XSS-Protection "1; mode=block" always';
+              more_set_headers 'X-Content-Type-Options "nosniff" always';
 
               include /usr/local/nginx/conf/vhosts/*.conf;
           }

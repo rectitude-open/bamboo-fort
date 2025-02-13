@@ -16,6 +16,9 @@ id -u ${run_user} >/dev/null 2>&1
 # Install required dependencies
 dnf -y install tar wget gcc gcc-c++ make zlib-devel pcre-devel openssl-devel libxml2-devel libxslt-devel gd gd-devel perl-ExtUtils-Embed
 
+# Download headers-more-nginx-module
+git clone https://github.com/openresty/headers-more-nginx-module /usr/local/headers-more-nginx-module
+
 # Create Nginx cache directory and set permissions
 mkdir -p /var/cache/nginx
 chown ${run_user}:${run_group} /var/cache/nginx
@@ -72,6 +75,7 @@ cd nginx-${nginx_version}
 	--with-stream_ssl_module \
 	--with-stream_ssl_preread_module \
 	--with-threads \
+	--add-module=/usr/local/headers-more-nginx-module \
 	--add-module=/usr/local/ModSecurity-nginx
 
 make && make install
