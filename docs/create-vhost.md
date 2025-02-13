@@ -247,10 +247,6 @@ more_set_headers "X-Content-Type-Options: nosniff";
 
 ```
 
-### Check Security Headers
-
-https://securityheaders.com/
-
 ### Nginx Header Examples
 
 A site with no external resources, allow inline scripts and styles, allow form actions to the same origin.
@@ -270,6 +266,14 @@ Disable unnecessary features
 ```bash
 more_set_headers "Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=()";
 ```
+
+### Check Security Headers
+
+https://securityheaders.com/
+
+### headers-more-nginx-module documentation
+
+https://github.com/openresty/headers-more-nginx-module
 
   </TabItem>
   <TabItem value="ansible" label={<><img src="/img/ansible-icon.svg" className="ansible-icon" />Ansible Playbook</>}>
