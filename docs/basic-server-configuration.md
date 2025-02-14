@@ -121,7 +121,7 @@ vm.swappiness=1
 ```bash title="Install Ansible and start a screen session"
 dnf config-manager --set-enabled crb
 dnf install -y epel-release
-dnf install -y ansible screen
+dnf install -y ansible-core screen
 screen -R setup
 ```
 
