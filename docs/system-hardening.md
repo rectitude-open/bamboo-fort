@@ -211,6 +211,15 @@ Promiscuous mode allows a network device to intercept and read each network pack
 PROMISC=no
 ```
 
+### Disable Unused Service
+
+```bash
+# Review active services
+systemctl list-units | grep service
+# Disable the service
+systemctl disable <service-name>
+```
+
 ## Extended
 
 ### Explanations of SSH Configuration Options
