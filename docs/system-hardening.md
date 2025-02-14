@@ -156,24 +156,30 @@ dracut -f
 ### Add Linux Audit Rules
 
 ```bash title="/etc/audit/rules.d/audit.rules"
+-a always,exit -F arch=b64 -F euid=0 -S execve -k root_audit
 -a always,exit -F arch=b64 -F path=/etc/passwd -F perm=wa -k passwd_changes
 -a always,exit -F arch=b64 -F path=/etc/shadow -F perm=wa -k shadow_changes
 -a always,exit -F arch=b64 -F path=/etc/group -F perm=wa -k group_changes
 -a always,exit -F arch=b64 -F path=/etc/gshadow -F perm=wa -k gshadow_changes
 
 -a always,exit -F arch=b64 -F path=/var/log/secure -F perm=wa -k secure_logs
--a always,exit -F arch=b64 -F path=/var/log/auth.log -F perm=wa -k auth_logs
 
--a always,exit -F arch=b64 -F path=/usr/sbin/useradd -F perm=x -k user_mgmt
--a always,exit -F arch=b64 -F path=/usr/sbin/usermod -F perm=x -k user_mgmt
--a always,exit -F arch=b64 -F path=/usr/sbin/groupadd -F perm=x -k group_mgmt
+-a always,exit -F arch=b64 -F path=/usr/sbin/useradd -F perm=x -k user_management
+-a always,exit -F arch=b64 -F path=/usr/sbin/usermod -F perm=x -k user_management
+-a always,exit -F arch=b64 -F path=/usr/sbin/userdel -F perm=x -k user_management
+-a always,exit -F arch=b64 -F path=/usr/sbin/groupadd -F perm=x -k group_management
+-a always,exit -F arch=b64 -F path=/usr/sbin/groupmod -F perm=x -k group_management
+-a always,exit -F arch=b64 -F path=/usr/sbin/groupdel -F perm=x -k group_management
 ```
 
 ```bash
 # Load the new rules
 auditctl -R /etc/audit/rules.d/audit.rules
-# Verify the rules
-# ausearch -k passwd_changes
+# List the loaded rules
+auditctl -l
+# Query the audit logs
+ausearch -k root_audit
+# Query the audit logs: ausearch -k user_management -i | grep usermod
 ```
 
 ### Stronger hashing for authentication

@@ -176,10 +176,12 @@
         - {path: "/etc/group", perm: "wa", key: "group_changes"}
         - {path: "/etc/gshadow", perm: "wa", key: "gshadow_changes"}
         - {path: "/var/log/secure", perm: "wa", key: "secure_logs"}
-        - {path: "/var/log/auth.log", perm: "wa", key: "auth_logs"}
-        - {path: "/usr/sbin/useradd", perm: "x", key: "user_mgmt"}
-        - {path: "/usr/sbin/usermod", perm: "x", key: "user_mgmt"}
-        - {path: "/usr/sbin/groupadd", perm: "x", key: "group_mgmt"}
+        - {path: "/usr/sbin/useradd", perm: "x", key: "user_management"}
+        - {path: "/usr/sbin/usermod", perm: "x", key: "user_management"}
+        - {path: "/usr/sbin/userdel", perm: "x", key: "user_management"}
+        - {path: "/usr/sbin/groupadd", perm: "x", key: "group_management"}
+        - {path: "/usr/sbin/groupmod", perm: "x", key: "group_management"}
+        - {path: "/usr/sbin/groupdel", perm: "x", key: "group_management"}
 
     - name: Apply audit rules
       command: auditctl -R /etc/audit/rules.d/audit.rules
