@@ -28,6 +28,7 @@
           - lrzsz
           - dnf-automatic
           - htop
+          - vim
         state: present
 
     - name: Enable Fastest Mirror Plugin

@@ -20,7 +20,7 @@ The following configuration is based on **Almalinux 9.5**.
 ```bash
 dnf config-manager --set-enabled crb
 dnf install -y epel-release
-dnf install -y lrzsz screen dnf-automatic htop
+dnf install -y lrzsz screen dnf-automatic htop vim
 systemctl enable --now dnf-automatic.timer
 hostnamectl set-hostname <host-name>
 ```
