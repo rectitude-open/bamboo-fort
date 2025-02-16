@@ -1,0 +1,120 @@
+- name: WWW Backup
+  hosts: localhost
+  remote_user: root
+  tasks:
+    - name: Install duplicity
+      yum:
+        name: duplicity
+        state: present
+
+    - name: Ensure backup directory exists
+      file:
+        path: /home/wwwbackup
+        state: directory
+        mode: "0700"
+        owner: root
+        group: root
+
+    - name: Create backup script
+      copy:
+        dest: /usr/local/bin/wwwbackup.sh
+        mode: "0700"
+        content: |
+          #!/bin/bash
+
+          # Variables
+          BASE_BACKUP_DIR="/home/wwwbackup/"              # Base directory for backups
+          CURRENT_BACKUP_DIR="$BASE_BACKUP_DIR$(date +%Y-%m-%d-%H%M)" # Current backup directory with timestamp
+          MYSQL_USER="root"                               # MySQL username
+          MYSQL_PASSWORD=""                               # MySQL password
+          BACKUP_SITES=(                                  # Website directories and corresponding databases
+              "aaa.com:/home/wwwroot/aaa.com:/home/wwwlogs/aaa.com:aa1,aa2"
+              "bbb.com:/home/wwwroot/bbb.com:/home/wwwlogs/bbb.com:bb1,bb2,bb3"
+          )
+          LOG_FILE="/var/log/wwwbackup.log"               # Log file
+          RETENTION_DAYS=7                                # Retention period for backups in days
+          VOLUME_SIZE=10240                               # Volume size in MB for duplicity (default: 1024MB)
+
+          # Function to get current timestamp
+          get_timestamp() {
+              date "+%Y-%m-%d %H:%M:%S"
+          }
+
+          # Validate base backup directory
+          if [[ ! -d "$BASE_BACKUP_DIR" ]]; then
+              echo "$(get_timestamp) Base backup directory $BASE_BACKUP_DIR does not exist. Creating it..." | tee -a $LOG_FILE
+              mkdir -p "$BASE_BACKUP_DIR"
+              if [[ $? -ne 0 ]]; then
+                  echo "$(get_timestamp) Failed to create base backup directory. Exiting..." | tee -a $LOG_FILE
+                  exit 1
+              fi
+          fi
+
+          # Ensure current backup directory exists
+          mkdir -p "$CURRENT_BACKUP_DIR"
+
+          # Loop through sites and backup each
+          for SITE_ENTRY in "${BACKUP_SITES[@]}"; do
+              # Parse site details
+              SITE_NAME=$(echo "$SITE_ENTRY" | cut -d':' -f1)
+              SITE_DIR=$(echo "$SITE_ENTRY" | cut -d':' -f2)
+              LOG_DIR=$(echo "$SITE_ENTRY" | cut -d':' -f3)
+              SITE_DBS=$(echo "$SITE_ENTRY" | cut -d':' -f4)
+
+              # Create site-specific backup directories
+              SITE_BACKUP_DIR="$CURRENT_BACKUP_DIR/$SITE_NAME"
+              WEB_BACKUP_DIR="$SITE_BACKUP_DIR/web"
+              LOG_BACKUP_DIR="$SITE_BACKUP_DIR/logs"
+              DB_BACKUP_DIR="$SITE_BACKUP_DIR/db"
+              mkdir -p "$WEB_BACKUP_DIR" "$DB_BACKUP_DIR" "$LOG_BACKUP_DIR"
+
+              # Backup website files
+              echo "$(get_timestamp) Backing up website files for $SITE_NAME from $SITE_DIR to $WEB_BACKUP_DIR..." | tee -a $LOG_FILE
+              duplicity full --no-encryption --volsize "$VOLUME_SIZE" "$SITE_DIR" "file://$WEB_BACKUP_DIR" --archive-dir="$CURRENT_BACKUP_DIR/.duplicity"
+
+              # Backup logs (only *.log files, exclude compressed files)
+              if [[ -d "$LOG_DIR" ]]; then
+                  echo "$(get_timestamp) Backing up log files for $SITE_NAME from $LOG_DIR to $LOG_BACKUP_DIR..." | tee -a $LOG_FILE
+                  find "$LOG_DIR" -maxdepth 1 -type f -name "*.log" -exec cp {} "$LOG_BACKUP_DIR" \;
+                  echo "$(get_timestamp) Compressing log files for $SITE_NAME..." | tee -a $LOG_FILE
+                  gzip -f "$LOG_BACKUP_DIR"/*.log
+              else
+                  echo "$(get_timestamp) Log directory $LOG_DIR does not exist. Skipping log backup for $SITE_NAME." | tee -a $LOG_FILE
+              fi
+
+              # Backup databases
+              echo "$(get_timestamp) Backing up databases for $SITE_NAME to $DB_BACKUP_DIR..." | tee -a $LOG_FILE
+              IFS=',' read -ra DBS <<< "$SITE_DBS"  # Split database names by comma
+              for DB in "${DBS[@]}"; do
+                  SQL_DUMP="$DB_BACKUP_DIR/${DB}_backup.sql"
+                  COMPRESSED_SQL="$SQL_DUMP.gz"
+                  echo "$(get_timestamp) Dumping database $DB to $SQL_DUMP..." | tee -a $LOG_FILE
+                  mysqldump -u$MYSQL_USER -p$MYSQL_PASSWORD "$DB" > "$SQL_DUMP"
+                  echo "$(get_timestamp) Compressing $SQL_DUMP to $COMPRESSED_SQL..." | tee -a $LOG_FILE
+                  gzip -f "$SQL_DUMP"
+              done
+          done
+
+          # Retention policy: Clean up backups older than retention period
+          echo "$(get_timestamp) Cleaning up backups older than $RETENTION_DAYS days..." | tee -a $LOG_FILE
+          find "$BASE_BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -mtime +$RETENTION_DAYS -exec rm -rf {} \;
+
+          # Log completion
+          echo "$(get_timestamp) Backup completed successfully." | tee -a $LOG_FILE
+
+          # Recovery instructions
+          # Complete recovery example:
+          # Restores all files for a specific website from the backup directory to a desired location.
+          # duplicity restore --no-encryption file:///home/wwwbackup/2025-01-16-1201/bbb.com/web /home/wwwroot/bbb.com
+
+          # Partial recovery example:
+          # Restores a specific file or directory from the backup.
+          # add --force to overwrite
+          # duplicity restore --no-encryption --file-to-restore bbb.txt file:///home/wwwbackup/2025-01-16-1201/bbb.com/web /home/wwwroot/bbb.com/bbb.txt
+
+    - name: Add cron job for wwwbackup script
+      cron:
+        name: "Daily website backup"
+        minute: "30"
+        hour: "0"
+        job: "/usr/local/bin/wwwbackup.sh"
