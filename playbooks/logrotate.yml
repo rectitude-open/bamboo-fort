@@ -1,0 +1,44 @@
+- name: Logrotate
+  hosts: all
+  remote_user: root
+  tasks:
+    - name: Install logrotate
+      dnf:
+        name: logrotate
+        state: present
+
+    - name: Configure logrotate for nginx
+      copy:
+        dest: /etc/logrotate.d/nginx
+        mode: "0644"
+        content: |
+          /home/wwwlogs/*/access.log /home/wwwlogs/*/error.log {
+              monthly
+              rotate 6
+              compress
+              delaycompress
+              missingok
+              notifempty
+              create 0640 www www
+              sharedscripts
+              postrotate
+                  systemctl reload nginx > /dev/null 2>&1
+              endscript
+          }
+
+    - name: Configure logrotate for modsecurity
+      copy:
+        dest: /etc/logrotate.d/modsecurity
+        mode: "0644"
+        content: |
+          /var/log/modsec_audit.log {
+              daily
+              rotate 10
+              compress
+              delaycompress
+              missingok
+              notifempty
+              create 0640 root root
+              sharedscripts
+              copytruncate
+          }

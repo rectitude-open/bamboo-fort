@@ -43,7 +43,7 @@ ls /etc/logrotate.d/
   </TabItem>
   <TabItem value="ansible" label={<><img src="/img/ansible-icon.svg" className="ansible-icon" />Ansible Playbook</>}>
 
-```yml title="install-mariadb.yml" file=../playbooks/install-mariadb.yml
+```yml title="logrotate.yml" file=../playbooks/logrotate.yml
 
 ```
 
