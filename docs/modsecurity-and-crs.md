@@ -91,6 +91,34 @@ git pull
 
 ## Optional
 
+### Install CRS Plugins
+
+https://coreruleset.org/docs/4-about-plugins/4-1-plugins/
+
+```
+mkdir /usr/local/modsecurity-crs/rules/plugins
+```
+
+```diff title="/etc/nginx/modsec/main.conf"
+Include /etc/nginx/modsec/modsecurity.conf
+Include /usr/local/modsecurity-crs/crs-setup.conf
++ Include /usr/local/modsecurity-crs/plugins/*-config.conf
++ Include /usr/local/modsecurity-crs/plugins/*-before.conf
+Include /usr/local/modsecurity-crs/rules/*.conf
++ Include /usr/local/modsecurity-crs/plugins/*-after.conf
+```
+
+https://github.com/coreruleset/plugin-registry
+
+```bash
+cd /usr/local/modsecurity-crs/plugins
+wget https://raw.githubusercontent.com/coreruleset/wordpress-rule-exclusions-plugin/refs/heads/master/plugins/wordpress-rule-exclusions-config.conf
+wget https://raw.githubusercontent.com/coreruleset/wordpress-rule-exclusions-plugin/refs/heads/master/plugins/wordpress-rule-exclusions-before.conf
+wget https://raw.githubusercontent.com/coreruleset/phpmyadmin-rule-exclusions-plugin/refs/heads/master/plugins/phpmyadmin-rule-exclusions-config.conf
+wget https://raw.githubusercontent.com/coreruleset/phpmyadmin-rule-exclusions-plugin/refs/heads/master/plugins/phpmyadmin-rule-exclusions-before.conf
+wget https://raw.githubusercontent.com/coreruleset/phpmyadmin-rule-exclusions-plugin/refs/heads/master/plugins/phpmyadmin-rule-exclusions-after.conf
+```
+
 ### Custom CRS rules
 
 https://access.redhat.com/documentation/zh-cn/red_hat_jboss_core_services/2.4.37/html/red_hat_jboss_core_services_modsecurity_guide/rules_making
