@@ -24,9 +24,11 @@ import TabItem from '@theme/TabItem';
 ### Install Postfix
 
 ```bash
-dnf install -y postfix
+dnf install -y postfix cyrus-sasl cyrus-sasl-plain
 systemctl enable --now postfix
 ```
+
+_NOTE: sasl is required for SMTP authentication._
 
 ### Set Default MTA (Mail Transfer Agent)
 
