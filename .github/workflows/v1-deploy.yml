@@ -54,4 +54,4 @@ jobs:
           SCRIPT_AFTER: |
             sudo chown -R www:www ${{ secrets.WEB_ROOT }}releases/${{ env.DEPLOY_TIMESTAMP }}
             sudo ln -sfn ${{ secrets.WEB_ROOT }}releases/${{ env.DEPLOY_TIMESTAMP }} ${{ secrets.WEB_ROOT }}public
-            ls -dt ${{ secrets.WEB_ROOT }}releases/* | grep -v current | tail -n +6 | xargs rm -rf
+            sudo ls -dt ${{ secrets.WEB_ROOT }}releases/* | grep -v current | tail -n +6 | xargs rm -rf
