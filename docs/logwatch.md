@@ -28,8 +28,8 @@ cp -f /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/logwatch
 ### Configure email address for dalily report
 
 ```ini title="/etc/logwatch/conf/logwatch.conf"
-MailTo = support@rectitude.cc
-MailFrom = server@noreply.rectitude.cc
+MailTo = support@rectitude.dev
+MailFrom = server@noreply.rectitude.dev
 Range = yesterday
 Detail = Med
 ```
@@ -40,9 +40,9 @@ Detail = Med
 # View report for yesterday
 logwatch --range yesterday
 # View report for today and send to email
-logwatch --range yesterday --mailto support@rectitude.cc
+logwatch --range yesterday --mailto support@rectitude.dev
 # View report for today with medium detail and send to email
-logwatch --range today --detail med --mailto support@rectitude.cc
+logwatch --range today --detail med --mailto support@rectitude.dev
 
 # Built-in service configuration
 cd /usr/share/logwatch/default.conf/
@@ -53,7 +53,7 @@ cd /usr/share/logwatch/default.conf/
 Run `crontab -e`
 
 ```bash
-00 04 * * * /usr/sbin/logwatch --range yesterday --mailto support@rectitude.cc
+00 04 * * * /usr/sbin/logwatch --range yesterday --mailto support@rectitude.dev
 ```
 
 <!-- TODO: ADD Folder Structure -->

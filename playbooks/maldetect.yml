@@ -2,7 +2,7 @@
   hosts: all
   remote_user: root
   vars:
-    email_addr: "admin@rectitude.cc"
+    email_addr: "admin@rectitude.dev"
     inotify_docroot: "/home/wwwroot"
 
   tasks:

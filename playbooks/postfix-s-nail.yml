@@ -4,11 +4,11 @@
   vars:
     smtp_server: mail.spacemail.com
     smtp_port: 465
-    sender_domain: no-reply.rectitude.cc
-    user_at_sender_domain: server@no-reply.rectitude.cc
+    sender_domain: no-reply.rectitude.dev
+    user_at_sender_domain: server@no-reply.rectitude.dev
     password: "******"
     mail_sender_name: "WebServer1"
-    current_hostname: "server.rectitude.cc"
+    current_hostname: "server.rectitude.dev"
 
   tasks:
     - name: Install Postfix and S-Nail

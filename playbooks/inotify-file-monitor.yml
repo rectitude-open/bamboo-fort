@@ -4,7 +4,7 @@
   vars:
     monitor_dirs: "/home/wwwroot/aaa.com/public/wp-admin /home/wwwroot/aaa.com/public/wp-includes"
     exclude_pattern: "(^/home/wwwroot/aaa.com/public/wp-admin/images)"
-    email_to: "admin@rectitude.cc"
+    email_to: "admin@rectitude.dev"
     email_subject: "File Tampering Detected"
     buffer_time: 60
     log_file: "/var/log/inotify_file_monitor.log"

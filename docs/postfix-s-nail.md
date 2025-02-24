@@ -13,13 +13,13 @@ import TabItem from '@theme/TabItem';
 
 ### Prepare
 
-| Variable           | Example1            | Example2                     |
-| ------------------ | ------------------- | ---------------------------- |
-| smtp-server        | mail.spacemail.com  | smtpdm.aliyun.com            |
-| smtp-port          | 465                 | 465                          |
-| sender-domain      | rectitude.cc        | no-reply.rectitude.cc        |
-| user@sender-domain | server@rectitude.cc | server@no-reply.rectitude.cc |
-| password           | \*\*\*\*            | \*\*\*\*                     |
+| Variable           | Example1             | Example2                      |
+| ------------------ | -------------------- | ----------------------------- |
+| smtp-server        | mail.spacemail.com   | smtpdm.aliyun.com             |
+| smtp-port          | 465                  | 465                           |
+| sender-domain      | rectitude.dev        | no-reply.rectitude.dev        |
+| user@sender-domain | server@rectitude.dev | server@no-reply.rectitude.dev |
+| password           | \*\*\*\*             | \*\*\*\*                      |
 
 ### Install Postfix
 
@@ -58,9 +58,9 @@ smtp_sasl_security_options = noanonymous
 smtp_sasl_tls_security_options = noanonymous
 smtp_tls_wrappermode = yes
 smtp_tls_security_level = encrypt
-# e.g. webserver1.rectitude.cc
+# e.g. webserver1.rectitude.dev
 myhostname = <server-hostname.domain.com>
-# e.g. noreply.rectitude.cc
+# e.g. noreply.rectitude.dev
 myorigin = <sender-domain>
 sender_canonical_maps = hash:/etc/postfix/sender_canonical
 ```
@@ -68,14 +68,14 @@ sender_canonical_maps = hash:/etc/postfix/sender_canonical
 ### Configure SMTP Authentication
 
 ```bash title="/etc/postfix/sasl_passwd"
-# e.g. [smtpdm.aliyun.com]:465 server@noreply.rectitude.cc:password
+# e.g. [smtpdm.aliyun.com]:465 server@noreply.rectitude.dev:password
 [<smtp-server>]:<smtp-port> <user@sender-domain>:<password>
 ```
 
 ### Configure Sender Canonical
 
 ```bash title="/etc/postfix/sender_canonical"
-# e.g. root@noreply.rectitude.cc server@noreply.rectitude.cc
+# e.g. root@noreply.rectitude.dev server@noreply.rectitude.dev
 root@<sender-domain> <user@sender-domain>
 ```
 
@@ -98,14 +98,14 @@ dnf install s-nail
 ### Configure S-nail
 
 ```bash title="~/.mailrc"
-# e.g. set from="WebServer1 <server@noreply.rectitude.cc>"
+# e.g. set from="WebServer1 <server@noreply.rectitude.dev>"
 set from="WebServer1 <<user@sender-domain>>"
 ```
 
 ### Send a Test Email
 
 ```bash
-echo "Test Email Body" | s-nail -s "Test Subject" admin@rectitude.cc
+echo "Test Email Body" | s-nail -s "Test Subject" admin@rectitude.dev
 ```
 
 ### Useful Commands

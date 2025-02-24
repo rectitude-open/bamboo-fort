@@ -2,8 +2,8 @@
   hosts: all
   remote_user: root
   vars:
-    mail_to: support@rectitude.cc
-    mail_from: server@noreply.rectitude.cc
+    mail_to: support@rectitude.dev
+    mail_from: server@noreply.rectitude.dev
     cron_hour: "04"
     cron_minute: "00"
 

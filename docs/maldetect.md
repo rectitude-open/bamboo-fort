@@ -26,7 +26,7 @@ cd maldetect-<version>
 
 ```ini title="/usr/local/maldetect/conf.maldet"
 email_alert="1"
-email_addr="admin@rectitude.cc"
+email_addr="admin@rectitude.dev"
 email_ignore_clean="0"
 autoupdate_signatures="1"
 cron_prune_days="35"

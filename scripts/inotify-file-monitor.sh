@@ -2,7 +2,7 @@
 
 MONITOR_DIRS="/home/wwwroot/aaa.com/public/wp-admin /home/wwwroot/aaa.com/public/wp-includes"
 EXCLUDE_PATTERN="(^/home/wwwroot/aaa.com/public/wp-admin/images)"
-EMAIL_TO="admin@rectitude.cc"
+EMAIL_TO="admin@rectitude.dev"
 EMAIL_SUBJECT="File Tampering Detected"
 BUFFER_TIME=60
 LAST_EMAIL_TIME=0

@@ -116,7 +116,7 @@ UMASK 027
 
 ```bash title="/etc/hosts"
 127.0.1.1   <hostname> <FQDN>
-# e.g.: 127.0.1.1   webserver1 webserver1.rectitude.cc
+# e.g.: 127.0.1.1   webserver1 webserver1.rectitude.dev
 ```
 
 ### Prevent unnecessary kernel modules
