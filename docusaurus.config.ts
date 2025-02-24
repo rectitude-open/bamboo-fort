@@ -41,7 +41,8 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: 'https://github.com/rectitude-open/bamboofort-collective/',
+          editUrl:
+            'https://github.com/rectitude-open/bamboofort-collective/edit/v1/',
           remarkPlugins: [[require('remark-code-snippets'), { sync: true }]],
         },
         blog: false,
