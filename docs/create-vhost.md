@@ -54,8 +54,7 @@ server {
         limit_conn conn_limit 15;
 
         try_files $uri $uri/ /index.php?$args;
-        expires -1;
-        more_set_headers 'Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"';
+        more_set_headers 'Cache-Control "no-cache, max-age=30, must-revalidate"';
     }
 
     location ~ \.php$ {
