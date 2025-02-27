@@ -45,7 +45,7 @@ server {
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|otf|eot)$ {
         sendfile on;
         tcp_nopush on;
-        expires 2d;
+        add_header Cache-Control "public, max-age=31536000";
         access_log off;
     }
 
@@ -71,6 +71,9 @@ server {
         fastcgi_pass unix:/run/php-fpm-aaa.sock;
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+
+        more_set_headers 'Cache-Control "no-store"';
+        more_clear_headers 'Last-Modified' 'ETag';
     }
 
     location ~ /\.(ht|git|svn|vscode|DS_Store|idea|env|project|settings|history) {
