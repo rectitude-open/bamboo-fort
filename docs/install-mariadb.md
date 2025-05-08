@@ -56,6 +56,7 @@ socket = /run/mysqld.sock
 collation-server=utf8mb4_general_ci
 character-set-server=utf8mb4
 init_connect=SET NAMES utf8mb4
+default-time-zone=+00:00
 innodb_buffer_pool_size = 200M
 query_cache_size = 8M
 max_connections = 200
