@@ -19,7 +19,7 @@ https://github.com/owasp-modsecurity/ModSecurity/wiki/Compilation-recipes-for-v3
 
 ```bash wordWrap=true title="Install dependencies"
 dnf install -y https://rpms.remirepo.net/enterprise/remi-release-9.rpm
-dnf install -y git gcc-c++ automake flex bison yajl yajl-devel curl curl-devel GeoIP GeoIP-devel zlib-devel pcre-devel ssdeep ssdeep-devel autoconf automake libtool
+dnf install -y git gcc-c++ automake flex bison yajl yajl-devel curl curl-devel GeoIP GeoIP-devel zlib-devel pcre-devel pcre2-devel ssdeep ssdeep-devel autoconf automake libtool
 ```
 
 ```bash title="Clone and install ModSecurity"
