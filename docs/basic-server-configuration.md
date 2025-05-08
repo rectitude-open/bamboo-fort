@@ -49,10 +49,14 @@ set shiftwidth=4
 set expandtab
 ```
 
-### Add Bash Aliases
+### Add Bash History and Aliases
 
 ```bash
-echo "alias ll='ls -alh'" >> ~/.bashrc
+cat >> ~/.bashrc << EOF
+HISTSIZE=1000
+HISTFILESIZE=2000
+alias ll='ls -alh'
+EOF
 source ~/.bashrc
 ```
 
