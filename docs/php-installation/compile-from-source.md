@@ -1,8 +1,8 @@
 ---
-title: Install PHP
-description: Install php.
-slug: /install-php
-sidebar_position: 4
+title: Compile from Source
+description: Compile PHP from source.
+slug: /compile-from-source
+sidebar_position: 2
 ---
 
 import Tabs from '@theme/Tabs';
@@ -15,7 +15,7 @@ import TabItem from '@theme/TabItem';
 
 ### Install PHP
 
-```bash title="install-php.sh" file=../scripts/install-php.sh
+```bash title="install-php.sh" file=../../scripts/install-php.sh
 
 ```
 
@@ -106,7 +106,7 @@ systemctl status php-fpm
   </TabItem>
   <TabItem value="ansible" label={<><img src="/img/ansible-icon.svg" className="ansible-icon" />Ansible Playbook</>}>
 
-```yml title="install-php.yml" file=../playbooks/install-php.yml
+```yml title="install-php.yml" file=../../playbooks/install-php.yml
 
 ```
 
