@@ -284,5 +284,16 @@ https://github.com/openresty/headers-more-nginx-module
 
 ```
 
+### Useful commands about MySQL
+
+```
+# show all users
+SELECT User, Host FROM mysql.user;
+# show the grants for a user
+SHOW GRANTS FOR 'aaa'@'localhost';
+# change the password for a user
+ALTER USER 'aaa'@'localhost' IDENTIFIED BY 'new-password';
+```
+
   </TabItem>
 </Tabs>
