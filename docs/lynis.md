@@ -16,7 +16,7 @@ import TabItem from '@theme/TabItem';
 ### Install Lynis
 
 ```bash
-dfn install -y lynis
+dnf install -y lynis
 ```
 
 ### Audit System
