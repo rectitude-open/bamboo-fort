@@ -35,6 +35,9 @@ systemctl enable firewalld
 
 # View all rules
 firewall-cmd --list-all
+
+# Delete a rule
+firewall-cmd --zone=public --remove-port=22/tcp --permanent
 ```
 
 ### Install Fail2Ban
