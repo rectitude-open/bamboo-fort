@@ -27,6 +27,7 @@ expose_php = Off
 error_log = "/var/log/php-error.log"
 max_execution_time = 30
 memory_limit = 128M
+upload_max_filesize = 2M
 post_max_size = 8M
 display_errors = Off
 disable_functions = exec,passthru,shell_exec,system,proc_open,popen,show_source
