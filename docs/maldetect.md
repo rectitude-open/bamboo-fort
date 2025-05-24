@@ -14,7 +14,7 @@ import TabItem from '@theme/TabItem';
 ### Compile and Install LMD
 
 ```bash
-dnf install -y inotify-tools
+dnf install -y inotify-tools ed
 cd /usr/local/src/
 wget https://www.rfxn.com/downloads/maldetect-current.tar.gz
 tar -zxvf maldetect-current.tar.gz
