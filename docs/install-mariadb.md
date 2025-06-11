@@ -51,8 +51,8 @@ systemctl enable --now mariadb
 ```ini title="/etc/my.cnf"
 [mysqld]
 log_warnings=1
-pid-file=/run/mariadb.pid
-socket = /run/mysqld.sock
+pid-file=/run/mysqld/mariadb.pid
+socket = /run/mysqld/mysqld.sock
 collation-server=utf8mb4_general_ci
 character-set-server=utf8mb4
 init_connect=SET NAMES utf8mb4
@@ -72,7 +72,7 @@ local-infile=0
 
 [client]
 default-character-set=utf8mb4
-socket = /run/mysqld.sock
+socket = /run/mysqld/mysqld.sock
 
 #
 # This group is read both by the client and the server
@@ -93,6 +93,13 @@ mkdir -p /var/log/mariadb
 touch /var/log/mariadb/slow.log
 touch /var/log/mariadb/error.log
 chown -R mysql:mysql /var/log/mariadb/
+```
+
+### Override Runtime Directory
+
+```ini title="/etc/systemd/system/mariadb.service.d/override.conf"
+[Service]
+RuntimeDirectory=mysqld
 ```
 
 ### Restart MariaDB

@@ -31,8 +31,8 @@ upload_max_filesize = 2M
 post_max_size = 8M
 display_errors = Off
 disable_functions = exec,passthru,shell_exec,system,proc_open,popen,show_source
-mysqli.default_socket = /run/mysqld.sock
-pdo_mysql.default_socket = /run/mysqld.sock
+mysqli.default_socket = /run/mysqld/mysqld.sock
+pdo_mysql.default_socket = /run/mysqld/mysqld.sock
 ```
 
 ### Configure PHP-FPM
