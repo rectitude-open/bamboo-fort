@@ -1,7 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
-# Interactive input for variables
-read -p "Please enter the version of Nginx (e.g., 1.26.2): " nginx_version
+set -e
+set -u
+set -o pipefail
+
+read -p "Please enter the version of Nginx (e.g., 1.28.0): " nginx_version
 read -p "Please enter the run group name (default: www): " run_group
 run_group=${run_group:-www}
 read -p "Please enter the run user name (default: www): " run_user
@@ -14,10 +17,12 @@ id -u ${run_user} >/dev/null 2>&1
 [ $? -ne 0 ] && useradd -g ${run_group} -M -s /sbin/nologin ${run_user}
 
 # Install required dependencies
-dnf -y install tar wget gcc gcc-c++ make zlib-devel pcre-devel openssl-devel libxml2-devel libxslt-devel gd gd-devel perl-ExtUtils-Embed
+dnf -y install tar wget git gcc gcc-c++ make zlib-devel pcre-devel openssl-devel libxml2-devel libxslt-devel gd gd-devel perl-ExtUtils-Embed
 
-# Download headers-more-nginx-module
-git clone https://github.com/openresty/headers-more-nginx-module /usr/local/headers-more-nginx-module
+
+if [ ! -d "/usr/local/headers-more-nginx-module" ]; then
+    git clone https://github.com/openresty/headers-more-nginx-module /usr/local/headers-more-nginx-module
+fi
 
 # Create Nginx cache directory and set permissions
 mkdir -p /var/cache/nginx
@@ -78,10 +83,41 @@ cd nginx-${nginx_version}
 	--add-module=/usr/local/headers-more-nginx-module \
 	--add-module=/usr/local/ModSecurity-nginx
 
-make && make install
+make -j"$(nproc)"
+make install
 
 mkdir -p /var/log/nginx/
 touch /var/log/nginx/error.log
 touch /var/log/nginx/access.log
-chown -R ${run_user}:${run_group} /var/log/nginx
+chown -R "${run_user}":"${run_group}" /var/log/nginx
 chmod -R 750 /var/log/nginx
+
+NGINX_SERVICE_FILE="/etc/systemd/system/nginx.service"
+cat > "${NGINX_SERVICE_FILE}" <<EOF
+[Unit]
+Description=The NGINX HTTP and reverse proxy server
+Documentation=https://nginx.org/en/docs/
+After=syslog.target network-online.target remote-fs.target nss-lookup.target
+Wants=network-online.target
+[Service]
+Type=forking
+PIDFile=/run/nginx.pid
+ExecStartPre=/usr/sbin/nginx -t -c /usr/local/nginx/conf/nginx.conf
+ExecStart=/usr/sbin/nginx -c /usr/local/nginx/conf/nginx.conf -g 'daemon on; master_process on;'
+ExecReload=/usr/sbin/nginx -s reload
+ExecStop=/usr/sbin/nginx -s stop
+TimeoutStopSec=5s
+LimitNOFILE=65536
+Restart=on-failure
+RestartSec=5s
+PrivateTmp=true
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now nginx
+
+echo "Nginx ${nginx_version} installed successfully."
+
+systemctl status nginx
